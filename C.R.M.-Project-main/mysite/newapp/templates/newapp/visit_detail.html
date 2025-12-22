@@ -1,0 +1,237 @@
+{% extends 'newapp/base.html' %}
+{% load static %}
+
+{% block title %}{{ visit.visit_id }} - CRM System{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+            <h1>📋 Visit {{ visit.visit_id }}</h1>
+            <div>
+                {% if visit.approval_status == 'PENDING' and visit.sales_employee.user == user %}
+                <a href="{% url 'newapp:visit_edit' visit.pk %}" class="btn btn-warning">Edit</a>
+                {% endif %}
+                <a href="{% url 'newapp:visit_list' %}" class="btn btn-secondary">Back to List</a>
+            </div>
+        </div>
+
+        <div class="detail-container">
+            <!-- Status Overview -->
+            <div class="detail-card">
+                <h2>Status Overview</h2>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <strong>Visit Status:</strong>
+                        <span class="badge badge-status-{{ visit.status|lower }}">{{ visit.get_status_display }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Approval Status:</strong>
+                        <span class="badge badge-{{ visit.approval_status|lower }}">{{ visit.get_approval_status_display }}</span>
+                    </div>
+                    {% if visit.approved_by %}
+                    <div class="detail-item">
+                        <strong>Approved By:</strong>
+                        <span>{{ visit.approved_by.get_full_name|default:visit.approved_by.username }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Approved At:</strong>
+                        <span>{{ visit.approved_at|date:"M d, Y H:i" }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Approval Actions (for Sales Heads/Managers) -->
+                {% if visit.approval_status == 'PENDING' %}
+                    {% if user.is_authenticated %}
+                        {% if user.sales_profile.role == 'ADMIN' or user.sales_profile.role == 'MANAGER' or user.sales_profile.role == 'SALES_HEAD' %}
+                    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd;">
+                        <h3>Approval Actions</h3>
+                        <form method="post" action="{% url 'newapp:visit_approve' visit.pk %}" style="display: inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="approval_status" value="APPROVED">
+                            <button type="submit" class="btn btn-success">✓ Approve Visit</button>
+                        </form>
+                        <form method="post" action="{% url 'newapp:visit_approve' visit.pk %}" style="display: inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="approval_status" value="REJECTED">
+                            <button type="submit" class="btn btn-danger">✗ Reject Visit</button>
+                        </form>
+                    </div>
+                        {% endif %}
+                    {% endif %}
+                {% endif %}
+            </div>
+
+            <!-- Visit Information -->
+            <div class="detail-card">
+                <h2>Visit Information</h2>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <strong>Visit ID:</strong>
+                        <span>{{ visit.visit_id }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Sales Employee:</strong>
+                        <span>{{ visit.sales_employee.user.get_full_name|default:visit.sales_employee.user.username }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Employee ID:</strong>
+                        <span>{{ visit.sales_employee.employee_id }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Visit Date:</strong>
+                        <span>📅 {{ visit.visit_date|date:"l, F d, Y" }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Visit Time:</strong>
+                        <span>🕐 {{ visit.visit_time|time:"H:i" }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prospect/Customer Details -->
+            <div class="detail-card">
+                <div class="card-header-flex">
+                    <h2>Prospect/Customer Details</h2>
+                    <a href="{% url 'newapp:prospect_detail' visit.prospect.pk %}" class="btn-small btn-info">View Full Profile</a>
+                </div>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <strong>Name:</strong>
+                        <span>{{ visit.prospect.name }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Company:</strong>
+                        <span>{{ visit.prospect.company_name|default:"—" }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Phone:</strong>
+                        <span>📞 {{ visit.prospect.phone }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Email:</strong>
+                        <span>📧 {{ visit.prospect.email|default:"—" }}</span>
+                    </div>
+                    <div class="detail-item full-width">
+                        <strong>Address:</strong>
+                        <span>{{ visit.prospect.address }}, {{ visit.prospect.city }}, {{ visit.prospect.state }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Meeting Details -->
+            <div class="detail-card">
+                <h2>Meeting Details</h2>
+                <div class="detail-item full-width" style="margin-bottom: 15px;">
+                    <strong>Meeting Agenda:</strong>
+                    <p style="margin-top: 10px; padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                        {{ visit.meeting_agenda }}
+                    </p>
+                </div>
+                
+                {% if visit.meeting_outcome %}
+                <div class="detail-item full-width" style="margin-bottom: 15px;">
+                    <strong>Meeting Outcome:</strong>
+                    <p style="margin-top: 10px; padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                        {{ visit.meeting_outcome }}
+                    </p>
+                </div>
+                {% endif %}
+                
+                <div class="detail-grid">
+                    {% if visit.outcome_type %}
+                    <div class="detail-item">
+                        <strong>Outcome Type:</strong>
+                        <span class="badge badge-outcome-{{ visit.outcome_type|lower }}">{{ visit.get_outcome_type_display }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if visit.next_follow_up_date %}
+                    <div class="detail-item">
+                        <strong>Next Follow-up:</strong>
+                        <span>📅 {{ visit.next_follow_up_date|date:"M d, Y" }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Location Details -->
+            {% if visit.location or visit.gps_latitude %}
+            <div class="detail-card">
+                <h2>Location Details</h2>
+                <div class="detail-grid">
+                    {% if visit.location %}
+                    <div class="detail-item full-width">
+                        <strong>Location:</strong>
+                        <span>📍 {{ visit.location }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if visit.gps_latitude and visit.gps_longitude %}
+                    <div class="detail-item">
+                        <strong>GPS Coordinates:</strong>
+                        <span>{{ visit.gps_latitude }}, {{ visit.gps_longitude }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Map:</strong>
+                        <a href="https://www.google.com/maps?q={{ visit.gps_latitude }},{{ visit.gps_longitude }}" 
+                           target="_blank" class="btn-small btn-info">View on Map</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Attachments -->
+            {% if visit.visiting_card or visit.photo or visit.document %}
+            <div class="detail-card">
+                <h2>Attachments</h2>
+                <div class="attachments-grid">
+                    {% if visit.visiting_card %}
+                    <div class="attachment-item">
+                        <strong>Visiting Card:</strong>
+                        <div class="attachment-preview">
+                            <img src="{{ visit.visiting_card.url }}" alt="Visiting Card" style="max-width: 300px; border-radius: 5px;">
+                        </div>
+                        <a href="{{ visit.visiting_card.url }}" target="_blank" class="btn-small btn-info">View Full Size</a>
+                    </div>
+                    {% endif %}
+                    
+                    {% if visit.photo %}
+                    <div class="attachment-item">
+                        <strong>Photo:</strong>
+                        <div class="attachment-preview">
+                            <img src="{{ visit.photo.url }}" alt="Meeting Photo" style="max-width: 300px; border-radius: 5px;">
+                        </div>
+                        <a href="{{ visit.photo.url }}" target="_blank" class="btn-small btn-info">View Full Size</a>
+                    </div>
+                    {% endif %}
+                    
+                    {% if visit.document %}
+                    <div class="attachment-item">
+                        <strong>Document:</strong>
+                        <div>
+                            <a href="{{ visit.document.url }}" target="_blank" class="btn btn-info">📄 Download Document</a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Metadata -->
+            <div class="detail-card">
+                <h2>Metadata</h2>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <strong>Created At:</strong>
+                        <span>{{ visit.created_at|date:"M d, Y H:i" }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Last Updated:</strong>
+                        <span>{{ visit.updated_at|date:"M d, Y H:i" }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+{% endblock %}

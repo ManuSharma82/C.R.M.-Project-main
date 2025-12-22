@@ -1,0 +1,516 @@
+{% extends 'newapp/base.html' %}
+
+{% block title %}{{ lead.lead_id }} - Lead Details - CRM{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📊 Lead Details: {{ lead.lead_id }}</h1>
+    <div class="page-header-actions">
+        <a href="{% url 'newapp:lead_edit' lead.pk %}" class="btn btn-warning">✏️ Edit Lead</a>
+        <a href="{% url 'newapp:lead_list' %}" class="btn btn-default">← Back to Leads</a>
+    </div>
+</div>
+
+<div style="max-width: 1000px; margin: 0 auto;">
+    <!-- Lead Information -->
+    <div class="section">
+        <h3>📋 Lead Information</h3>
+        <div class="detail-grid">
+            <div class="detail-item">
+                <span class="detail-label">Lead ID:</span>
+                <span class="detail-value"><strong>{{ lead.lead_id }}</strong></span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Source:</span>
+                <span class="detail-value">
+                    <span class="badge badge-{% if lead.lead_source == 'VISIT' %}primary{% elif lead.lead_source == 'WEB' %}success{% elif lead.lead_source == 'REFERENCE' %}info{% else %}secondary{% endif %}">
+                        {{ lead.get_lead_source_display }}
+                    </span>
+                </span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Created:</span>
+                <span class="detail-value">{{ lead.created_at|date:"M d, Y H:i" }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Updated:</span>
+                <span class="detail-value">{{ lead.updated_at|date:"M d, Y H:i" }}</span>
+            </div>
+            {% if lead.originating_visit %}
+            <div class="detail-item">
+                <span class="detail-label">Originating Visit:</span>
+                <span class="detail-value">
+                    <a href="{% url 'newapp:visit_detail' lead.originating_visit.pk %}">{{ lead.originating_visit.visit_id }}</a>
+                </span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Prospect Information -->
+    <div class="section">
+        <h3>🏢 Prospect Information</h3>
+        <div class="detail-grid">
+            <div class="detail-item">
+                <span class="detail-label">Prospect Name:</span>
+                <span class="detail-value">
+                    <a href="{% url 'newapp:prospect_detail' lead.prospect.pk %}">{{ lead.prospect.name }}</a>
+                </span>
+            </div>
+            {% if lead.prospect.company_name %}
+            <div class="detail-item">
+                <span class="detail-label">Company:</span>
+                <span class="detail-value">{{ lead.prospect.company_name }}</span>
+            </div>
+            {% endif %}
+            <div class="detail-item">
+                <span class="detail-label">City:</span>
+                <span class="detail-value">{{ lead.prospect.city }}, {{ lead.prospect.state }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact Details -->
+    <div class="section">
+        <h3>👤 Contact Details</h3>
+        <div class="detail-grid">
+            <div class="detail-item">
+                <span class="detail-label">Contact Person:</span>
+                <span class="detail-value">{{ lead.contact_person }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Mobile:</span>
+                <span class="detail-value">
+                    <a href="tel:{{ lead.mobile }}">📱 {{ lead.mobile }}</a>
+                </span>
+            </div>
+            {% if lead.email %}
+            <div class="detail-item">
+                <span class="detail-label">Email:</span>
+                <span class="detail-value">
+                    <a href="mailto:{{ lead.email }}">📧 {{ lead.email }}</a>
+                </span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Requirement -->
+    <div class="section">
+        <h3>📝 Requirement</h3>
+        <div class="detail-item full-width">
+            <span class="detail-label">Description:</span>
+            <p class="detail-value">{{ lead.requirement_description|linebreaksbr }}</p>
+        </div>
+        <div class="detail-grid">
+            <div class="detail-item">
+                <span class="detail-label">Estimated Value:</span>
+                <span class="detail-value">
+                    {% if lead.estimated_value %}
+                    <strong>₹{{ lead.estimated_value|floatformat:2 }}</strong>
+                    {% else %}
+                    -
+                    {% endif %}
+                </span>
+            </div>
+            {% if lead.actual_value %}
+            <div class="detail-item">
+                <span class="detail-label">Actual Value:</span>
+                <span class="detail-value">
+                    <strong>₹{{ lead.actual_value|floatformat:2 }}</strong>
+                </span>
+            </div>
+            {% endif %}
+            <div class="detail-item">
+                <span class="detail-label">Priority:</span>
+                <span class="detail-value">
+                    <span class="badge badge-{% if lead.priority == 'URGENT' %}danger{% elif lead.priority == 'HIGH' %}warning{% elif lead.priority == 'MEDIUM' %}info{% else %}secondary{% endif %}">
+                        {{ lead.priority }}
+                    </span>
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status & Progress -->
+    <div class="section">
+        <h3>🎯 Status & Progress</h3>
+        <div class="detail-grid">
+            <div class="detail-item">
+                <span class="detail-label">Assigned To:</span>
+                <span class="detail-value">{{ lead.assigned_to.user.get_full_name|default:lead.assigned_to.user.username }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Status:</span>
+                <span class="detail-value">
+                    <span class="badge badge-{% if lead.status == 'NEW' %}primary{% elif lead.status == 'CONTACTED' %}info{% elif lead.status == 'QUALIFIED' %}success{% elif lead.status == 'PROPOSAL_SENT' %}warning{% elif lead.status == 'IN_NEGOTIATION' %}orange{% elif lead.status == 'WON' %}success-dark{% elif lead.status == 'LOST' %}danger{% else %}secondary{% endif %}">
+                        {{ lead.get_status_display }}
+                    </span>
+                </span>
+            </div>
+            <div class="detail-item full-width">
+                <span class="detail-label">Progress:</span>
+                <div class="progress-bar-large">
+                    <div class="progress-fill-large" data-progress="{{ lead.progress_percentage }}">
+                        <span class="progress-text-large">{{ lead.progress_percentage }}%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="section">
+        <h3>📅 Timeline</h3>
+        <div class="detail-grid">
+            {% if lead.expected_closure_date %}
+            <div class="detail-item">
+                <span class="detail-label">Expected Closure:</span>
+                <span class="detail-value">{{ lead.expected_closure_date|date:"M d, Y" }}</span>
+            </div>
+            {% endif %}
+            {% if lead.next_action_date %}
+            <div class="detail-item">
+                <span class="detail-label">Next Action Date:</span>
+                <span class="detail-value">
+                    <span class="badge badge-{% if lead.next_action_date < today %}danger{% elif lead.next_action_date == today %}warning{% else %}info{% endif %}">
+                        {{ lead.next_action_date|date:"M d, Y" }}
+                    </span>
+                </span>
+            </div>
+            {% endif %}
+        </div>
+        {% if lead.next_action_notes %}
+        <div class="detail-item full-width">
+            <span class="detail-label">Next Action Notes:</span>
+            <p class="detail-value">{{ lead.next_action_notes|linebreaksbr }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Additional Notes -->
+    {% if lead.notes or lead.lost_reason %}
+    <div class="section">
+        <h3>📌 Additional Information</h3>
+        {% if lead.notes %}
+        <div class="detail-item full-width">
+            <span class="detail-label">Notes:</span>
+            <p class="detail-value">{{ lead.notes|linebreaksbr }}</p>
+        </div>
+        {% endif %}
+        {% if lead.lost_reason %}
+        <div class="detail-item full-width">
+            <span class="detail-label">Lost Reason:</span>
+            <p class="detail-value alert-warning">{{ lead.lost_reason|linebreaksbr }}</p>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Change History -->
+    {% if history %}
+    <div class="section">
+        <h3>📜 Change History</h3>
+        <div class="history-timeline">
+            {% for change in history %}
+            <div class="history-item">
+                <div class="history-header">
+                    <span class="history-user">👤 {{ change.changed_by.get_full_name|default:change.changed_by.username }}</span>
+                    <span class="history-date">{{ change.changed_at|date:"M d, Y H:i" }}</span>
+                </div>
+                <div class="history-content">
+                    <strong>{{ change.field_name|title }}:</strong>
+                    {% if change.old_value %}
+                    <span class="old-value">{{ change.old_value }}</span> →
+                    {% endif %}
+                    <span class="new-value">{{ change.new_value }}</span>
+                    {% if change.notes %}
+                    <div class="history-notes">{{ change.notes }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Activities / Follow-ups -->
+    <div class="section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md);">
+            <h3 style="margin: 0;">📋 Activities & Follow-ups</h3>
+            <a href="{% url 'newapp:activity_create' %}?lead_id={{ lead.pk }}" class="btn btn-primary">➕ Log Activity</a>
+        </div>
+        {% if activities %}
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Activity ID</th>
+                        <th>Type</th>
+                        <th>Date & Time</th>
+                        <th>Summary</th>
+                        <th>Status</th>
+                        <th>Next Follow-up</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for activity in activities %}
+                    <tr>
+                        <td><strong>{{ activity.activity_id }}</strong></td>
+                        <td>
+                            <span class="badge badge-{% if activity.activity_type == 'CALL' %}primary{% elif activity.activity_type == 'EMAIL' %}info{% elif activity.activity_type == 'MEETING' %}success{% elif activity.activity_type == 'WHATSAPP' %}success{% else %}secondary{% endif %}">
+                                {{ activity.get_activity_type_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {{ activity.activity_date|date:"M d, Y" }}<br>
+                            <small>{{ activity.activity_time|time:"h:i A" }}</small>
+                        </td>
+                        <td>{{ activity.discussion_summary|truncatewords:10 }}</td>
+                        <td>
+                            <span class="badge badge-{% if activity.status == 'COMPLETED' %}success{% elif activity.status == 'SCHEDULED' %}warning{% elif activity.status == 'CANCELLED' %}danger{% else %}info{% endif %}">
+                                {{ activity.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if activity.next_followup_date %}
+                            <span class="badge badge-info">{{ activity.next_followup_date|date:"M d" }}</span>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td class="actions">
+                            <a href="{% url 'newapp:activity_detail' activity.pk %}" class="btn-small btn-info" title="View">👁️</a>
+                            <a href="{% url 'newapp:activity_edit' activity.pk %}" class="btn-small btn-warning" title="Edit">✏️</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: var(--spacing-lg); background: #f8f9fa; border-radius: var(--border-radius);">
+            <p style="color: var(--text-light);">No activities logged yet</p>
+            <a href="{% url 'newapp:activity_create' %}?lead_id={{ lead.pk }}" class="btn btn-primary">➕ Log First Activity</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Related Visits -->
+    {% if visits %}
+    <div class="section">
+        <h3>🚗 Related Visits</h3>
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Visit ID</th>
+                        <th>Date</th>
+                        <th>Sales Rep</th>
+                        <th>Outcome</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for visit in visits %}
+                    <tr>
+                        <td><strong>{{ visit.visit_id }}</strong></td>
+                        <td>{{ visit.visit_date|date:"M d, Y" }}</td>
+                        <td>{{ visit.sales_employee.user.get_full_name|default:visit.sales_employee.user.username }}</td>
+                        <td>
+                            {% if visit.outcome_type %}
+                            <span class="badge badge-{% if visit.outcome_type == 'POSITIVE' or visit.outcome_type == 'DEAL_CLOSED' %}success{% elif visit.outcome_type == 'NEGATIVE' %}danger{% else %}secondary{% endif %}">
+                                {{ visit.get_outcome_type_display }}
+                            </span>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge badge-{% if visit.status == 'COMPLETED' %}success{% elif visit.status == 'SCHEDULED' %}warning{% else %}secondary{% endif %}">
+                                {{ visit.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{% url 'newapp:visit_detail' visit.pk %}" class="btn-small btn-info">View</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.section h3 {
+    color: var(--primary-color);
+    font-size: 1.2em;
+    font-weight: 700;
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 2px solid var(--border-light);
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.detail-item.full-width {
+    grid-column: 1 / -1;
+}
+
+.detail-label {
+    font-weight: 600;
+    color: #7f8c8d;
+    font-size: 0.9em;
+}
+
+.detail-value {
+    color: #2c3e50;
+    font-size: 1em;
+}
+
+.detail-value a {
+    color: #3498db;
+    text-decoration: none;
+}
+
+.detail-value a:hover {
+    text-decoration: underline;
+}
+
+.progress-bar-large {
+    width: 100%;
+    height: 30px;
+    background-color: #e9ecef;
+    border-radius: 15px;
+    overflow: hidden;
+    position: relative;
+    margin-top: 5px;
+}
+
+.progress-fill-large {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: width 0.3s ease;
+}
+
+.progress-text-large {
+    font-size: 14px;
+    font-weight: bold;
+    color: white;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.history-timeline {
+    border-left: 3px solid #3498db;
+    padding-left: 20px;
+}
+
+.history-item {
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.history-item::before {
+    content: '●';
+    position: absolute;
+    left: -27px;
+    color: #3498db;
+    font-size: 1.5em;
+}
+
+.history-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.history-user {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.history-date {
+    color: #7f8c8d;
+    font-size: 0.9em;
+}
+
+.history-content {
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+.old-value {
+    color: #e74c3c;
+    text-decoration: line-through;
+}
+
+.new-value {
+    color: #27ae60;
+    font-weight: 600;
+}
+
+.history-notes {
+    margin-top: 5px;
+    font-style: italic;
+    color: #7f8c8d;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    padding: 10px;
+    border-radius: 4px;
+    border-left: 4px solid #ffc107;
+}
+
+.badge-orange {
+    background-color: #fd7e14;
+    color: white;
+}
+
+.badge-success-dark {
+    background-color: #28a745;
+    color: white;
+}
+</style>
+
+<script>
+// Apply progress bar width and color from data attributes to avoid CSS linting errors with Django template syntax
+document.addEventListener('DOMContentLoaded', function() {
+    const progressBar = document.querySelector('.progress-fill-large[data-progress]');
+    if (progressBar) {
+        const progress = parseInt(progressBar.getAttribute('data-progress'));
+        progressBar.style.width = progress + '%';
+        
+        // Set color based on progress percentage
+        if (progress >= 75) {
+            progressBar.style.backgroundColor = '#28a745'; // green
+        } else if (progress >= 50) {
+            progressBar.style.backgroundColor = '#ffc107'; // yellow
+        } else if (progress >= 25) {
+            progressBar.style.backgroundColor = '#fd7e14'; // orange
+        } else {
+            progressBar.style.backgroundColor = '#dc3545'; // red
+        }
+    }
+});
+</script>
+{% endblock %}

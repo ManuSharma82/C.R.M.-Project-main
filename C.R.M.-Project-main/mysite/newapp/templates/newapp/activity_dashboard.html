@@ -1,0 +1,215 @@
+{% extends 'newapp/base.html' %}
+
+{% block title %}Activity Tracker - Follow-up Dashboard - CRM{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📋 Activity Tracker - Follow-up Dashboard</h1>
+    <div class="page-header-actions">
+        <a href="{% url 'newapp:activity_create' %}" class="btn btn-primary">➕ Log New Activity</a>
+        <a href="{% url 'newapp:activity_list' %}" class="btn btn-default">📊 All Activities</a>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-md); margin-bottom: var(--spacing-lg);">
+    <div class="stat-card" style="background: linear-gradient(135deg, #f8d7da 0%, #f1aeb5 100%); color: #721c24;">
+        <div class="stat-value">{{ overdue_count }}</div>
+        <div class="stat-label">⚠️ Overdue</div>
+    </div>
+    <div class="stat-card" style="background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%); color: #856404;">
+        <div class="stat-value">{{ today_count }}</div>
+        <div class="stat-label">📅 Today</div>
+    </div>
+    <div class="stat-card" style="background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%); color: #0c5460;">
+        <div class="stat-value">{{ upcoming_count }}</div>
+        <div class="stat-label">🔜 Next 7 Days</div>
+    </div>
+    <div class="stat-card" style="background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); color: #155724;">
+        <div class="stat-value">{{ completed_activities }}</div>
+        <div class="stat-label">✓ Completed</div>
+    </div>
+</div>
+
+<!-- Overdue Follow-ups -->
+{% if overdue_followups %}
+<div class="section">
+    <h2 style="color: #dc3545;">⚠️ Overdue Follow-ups</h2>
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Activity ID</th>
+                    <th>Lead</th>
+                    <th>Type</th>
+                    <th>Scheduled Date</th>
+                    <th>Assigned To</th>
+                    <th>Days Overdue</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for activity in overdue_followups %}
+                <tr style="background-color: #fff5f5;">
+                    <td><strong>{{ activity.activity_id }}</strong></td>
+                    <td>
+                        <strong>{{ activity.lead.lead_id }}</strong><br>
+                        <small>{{ activity.lead.prospect.name }}</small>
+                    </td>
+                    <td>
+                        <span class="badge badge-secondary">{{ activity.get_activity_type_display }}</span>
+                    </td>
+                    <td>{{ activity.activity_date|date:"M d, Y" }}</td>
+                    <td>{{ activity.lead.assigned_to.user.get_full_name|default:activity.lead.assigned_to.user.username }}</td>
+                    <td>
+                        <span class="badge badge-danger">{{ activity.activity_date|timesince }} ago</span>
+                    </td>
+                    <td class="actions">
+                        <a href="{% url 'newapp:activity_detail' activity.pk %}" class="btn-small btn-info" title="View">👁️</a>
+                        <a href="{% url 'newapp:activity_edit' activity.pk %}" class="btn-small btn-warning" title="Edit">✏️</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Today's Follow-ups -->
+{% if todays_followups %}
+<div class="section">
+    <h2 style="color: #ffc107;">📅 Today's Activities</h2>
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Activity ID</th>
+                    <th>Lead</th>
+                    <th>Type</th>
+                    <th>Time</th>
+                    <th>Assigned To</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for activity in todays_followups %}
+                <tr style="background-color: #fffbf0;">
+                    <td><strong>{{ activity.activity_id }}</strong></td>
+                    <td>
+                        <strong>{{ activity.lead.lead_id }}</strong><br>
+                        <small>{{ activity.lead.prospect.name }}</small>
+                    </td>
+                    <td>
+                        <span class="badge badge-info">{{ activity.get_activity_type_display }}</span>
+                    </td>
+                    <td>{{ activity.activity_time|time:"h:i A" }}</td>
+                    <td>{{ activity.lead.assigned_to.user.get_full_name|default:activity.lead.assigned_to.user.username }}</td>
+                    <td>
+                        <span class="badge badge-{% if activity.status == 'COMPLETED' %}success{% elif activity.status == 'SCHEDULED' %}warning{% else %}secondary{% endif %}">
+                            {{ activity.get_status_display }}
+                        </span>
+                    </td>
+                    <td class="actions">
+                        <a href="{% url 'newapp:activity_detail' activity.pk %}" class="btn-small btn-info" title="View">👁️</a>
+                        <a href="{% url 'newapp:activity_edit' activity.pk %}" class="btn-small btn-warning" title="Edit">✏️</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Upcoming Follow-ups -->
+{% if upcoming_followups %}
+<div class="section">
+    <h2 style="color: #17a2b8;">🔜 Upcoming Follow-ups (Next 7 Days)</h2>
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Activity ID</th>
+                    <th>Lead</th>
+                    <th>Type</th>
+                    <th>Scheduled Date</th>
+                    <th>Time</th>
+                    <th>Assigned To</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for activity in upcoming_followups %}
+                <tr>
+                    <td><strong>{{ activity.activity_id }}</strong></td>
+                    <td>
+                        <strong>{{ activity.lead.lead_id }}</strong><br>
+                        <small>{{ activity.lead.prospect.name }}</small>
+                    </td>
+                    <td>
+                        <span class="badge badge-primary">{{ activity.get_activity_type_display }}</span>
+                    </td>
+                    <td>{{ activity.activity_date|date:"M d, Y" }}</td>
+                    <td>{{ activity.activity_time|time:"h:i A" }}</td>
+                    <td>{{ activity.lead.assigned_to.user.get_full_name|default:activity.lead.assigned_to.user.username }}</td>
+                    <td class="actions">
+                        <a href="{% url 'newapp:activity_detail' activity.pk %}" class="btn-small btn-info" title="View">👁️</a>
+                        <a href="{% url 'newapp:activity_edit' activity.pk %}" class="btn-small btn-warning" title="Edit">✏️</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Recent Completed Activities -->
+{% if recent_activities %}
+<div class="section">
+    <h2 style="color: #28a745;">✓ Recent Completed Activities</h2>
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Activity ID</th>
+                    <th>Lead</th>
+                    <th>Type</th>
+                    <th>Date</th>
+                    <th>Summary</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for activity in recent_activities %}
+                <tr>
+                    <td><strong>{{ activity.activity_id }}</strong></td>
+                    <td>
+                        <strong>{{ activity.lead.lead_id }}</strong><br>
+                        <small>{{ activity.lead.prospect.name }}</small>
+                    </td>
+                    <td>
+                        <span class="badge badge-success">{{ activity.get_activity_type_display }}</span>
+                    </td>
+                    <td>{{ activity.activity_date|date:"M d, Y" }}</td>
+                    <td>{{ activity.discussion_summary|truncatewords:10 }}</td>
+                    <td class="actions">
+                        <a href="{% url 'newapp:activity_detail' activity.pk %}" class="btn-small btn-info" title="View">👁️</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if not overdue_followups and not todays_followups and not upcoming_followups and not recent_activities %}
+<div class="section" style="text-align: center; padding: var(--spacing-xl);">
+    <p style="font-size: 1.5em; color: var(--text-light); margin-bottom: var(--spacing-lg);">📭 No activities found</p>
+    <a href="{% url 'newapp:activity_create' %}" class="btn btn-primary">➕ Log Your First Activity</a>
+</div>
+{% endif %}
+{% endblock %}

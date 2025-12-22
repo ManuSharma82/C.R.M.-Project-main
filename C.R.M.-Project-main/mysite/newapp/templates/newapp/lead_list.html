@@ -1,0 +1,243 @@
+{% extends 'newapp/base.html' %}
+
+{% block title %}Lead Management - CRM{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📊 Lead Management</h1>
+    <div class="page-header-actions">
+        <a href="{% url 'newapp:lead_create' %}" class="btn btn-primary">➕ Create New Lead</a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="filter-section">
+    <form method="get" class="filter-form">
+        {% if request.GET.view_as_user %}
+        <input type="hidden" name="view_as_user" value="{{ request.GET.view_as_user }}">
+        {% endif %}
+        
+        <div class="form-group">
+            <input 
+                type="text" 
+                name="search" 
+                value="{{ search_query }}" 
+                placeholder="🔍 Search by Lead ID, Prospect, Contact, Mobile, Email..." 
+                class="form-input">
+        </div>
+        
+        <div class="form-group">
+            <select name="source" class="form-input">
+                <option value="">All Sources</option>
+                {% for value, label in lead_sources %}
+                <option value="{{ value }}" {% if current_source == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <select name="status" class="form-input">
+                <option value="">All Statuses</option>
+                {% for value, label in lead_statuses %}
+                <option value="{{ value }}" {% if current_status == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <select name="priority" class="form-input">
+                <option value="">All Priorities</option>
+                {% for value, label in priorities %}
+                <option value="{{ value }}" {% if current_priority == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <select name="assigned_to" class="form-input">
+                <option value="">All Employees</option>
+                {% for emp in sales_employees %}
+                <option value="{{ emp.id }}" {% if current_assigned == emp.id|stringformat:"s" %}selected{% endif %}>
+                    {{ emp.user.get_full_name|default:emp.user.username }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <button type="submit" class="btn btn-primary">Apply Filters</button>
+        </div>
+        <div class="form-group">
+            <a href="{% url 'newapp:lead_list' %}{% if request.GET.view_as_user %}?view_as_user={{ request.GET.view_as_user }}{% endif %}" class="btn btn-default">Clear</a>
+        </div>
+    </form>
+</div>
+
+<!-- Leads Table -->
+{% if leads %}
+<div class="table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Lead ID</th>
+                <th>Source</th>
+                <th>Prospect</th>
+                <th>Contact Person</th>
+                <th>Mobile</th>
+                <th>Assigned To</th>
+                <th>Status</th>
+                <th>Priority</th>
+                <th>Progress</th>
+                <th>Est. Value</th>
+                <th>Next Action</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for lead in leads %}
+            <tr>
+                <td><strong>{{ lead.lead_id }}</strong></td>
+                <td>
+                    <span class="badge badge-{% if lead.lead_source == 'VISIT' %}primary{% elif lead.lead_source == 'WEB' %}success{% elif lead.lead_source == 'REFERENCE' %}info{% else %}secondary{% endif %}">
+                        {{ lead.get_lead_source_display }}
+                    </span>
+                </td>
+                <td>
+                    <strong>{{ lead.prospect.name }}</strong>
+                    {% if lead.prospect.company_name %}
+                    <br><small>{{ lead.prospect.company_name }}</small>
+                    {% endif %}
+                </td>
+                <td>{{ lead.contact_person }}</td>
+                <td>{{ lead.mobile }}</td>
+                <td>{{ lead.assigned_to.user.get_full_name|default:lead.assigned_to.user.username }}</td>
+                <td>
+                    <span class="badge badge-{% if lead.status == 'NEW' %}primary{% elif lead.status == 'CONTACTED' %}info{% elif lead.status == 'QUALIFIED' %}success{% elif lead.status == 'PROPOSAL_SENT' %}warning{% elif lead.status == 'IN_NEGOTIATION' %}orange{% elif lead.status == 'WON' %}success-dark{% elif lead.status == 'LOST' %}danger{% else %}secondary{% endif %}">
+                        {{ lead.get_status_display }}
+                    </span>
+                </td>
+                <td>
+                    <span class="badge badge-{% if lead.priority == 'URGENT' %}danger{% elif lead.priority == 'HIGH' %}warning{% elif lead.priority == 'MEDIUM' %}info{% else %}secondary{% endif %}">
+                        {{ lead.priority }}
+                    </span>
+                </td>
+                <td>
+                    <div class="progress-bar">
+                        <div class="progress-fill progress-{% if lead.progress_percentage >= 75 %}high{% elif lead.progress_percentage >= 50 %}medium{% elif lead.progress_percentage >= 25 %}low{% else %}critical{% endif %}" data-width="{{ lead.progress_percentage }}">
+                            <span class="progress-text">{{ lead.progress_percentage }}%</span>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    {% if lead.estimated_value %}
+                    ₹{{ lead.estimated_value|floatformat:0 }}
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+                <td>
+                    {% if lead.next_action_date %}
+                    <span class="badge badge-{% if lead.next_action_date < today %}danger{% elif lead.next_action_date == today %}warning{% else %}info{% endif %}">
+                        {{ lead.next_action_date|date:"M d, Y" }}
+                    </span>
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+                <td class="actions">
+                    <a href="{% url 'newapp:lead_detail' lead.pk %}" class="btn-small btn-info" title="View Details">👁️</a>
+                    <a href="{% url 'newapp:lead_edit' lead.pk %}" class="btn-small btn-warning" title="Edit">✏️</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if is_paginated %}
+<div class="section" style="display: flex; justify-content: center; align-items: center; gap: var(--spacing-md);">
+    {% if page_obj.has_previous %}
+        <a href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.source %}&source={{ request.GET.source }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.priority %}&priority={{ request.GET.priority }}{% endif %}{% if request.GET.assigned_to %}&assigned_to={{ request.GET.assigned_to }}{% endif %}{% if request.GET.view_as_user %}&view_as_user={{ request.GET.view_as_user }}{% endif %}" class="btn btn-default">First</a>
+        <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.source %}&source={{ request.GET.source }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.priority %}&priority={{ request.GET.priority }}{% endif %}{% if request.GET.assigned_to %}&assigned_to={{ request.GET.assigned_to }}{% endif %}{% if request.GET.view_as_user %}&view_as_user={{ request.GET.view_as_user }}{% endif %}" class="btn btn-default">Previous</a>
+    {% endif %}
+    
+    <span style="font-weight: 600; color: var(--text-dark);">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    
+    {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.source %}&source={{ request.GET.source }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.priority %}&priority={{ request.GET.priority }}{% endif %}{% if request.GET.assigned_to %}&assigned_to={{ request.GET.assigned_to }}{% endif %}{% if request.GET.view_as_user %}&view_as_user={{ request.GET.view_as_user }}{% endif %}" class="btn btn-default">Next</a>
+        <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.source %}&source={{ request.GET.source }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.priority %}&priority={{ request.GET.priority }}{% endif %}{% if request.GET.assigned_to %}&assigned_to={{ request.GET.assigned_to }}{% endif %}{% if request.GET.view_as_user %}&view_as_user={{ request.GET.view_as_user }}{% endif %}" class="btn btn-default">Last</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="section" style="text-align: center; padding: var(--spacing-xl);">
+    <p style="font-size: 1.5em; color: var(--text-light); margin-bottom: var(--spacing-lg);">📭 No leads found</p>
+    <a href="{% url 'newapp:lead_create' %}" class="btn btn-primary">➕ Create Your First Lead</a>
+</div>
+{% endif %}
+
+<style>
+.progress-bar {
+    width: 100px;
+    height: 20px;
+    background-color: #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-fill {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: width 0.3s ease;
+}
+
+.progress-high {
+    background-color: #28a745;
+}
+
+.progress-medium {
+    background-color: #ffc107;
+}
+
+.progress-low {
+    background-color: #fd7e14;
+}
+
+.progress-critical {
+    background-color: #dc3545;
+}
+
+.progress-text {
+    font-size: 11px;
+    font-weight: bold;
+    color: white;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.badge-orange {
+    background-color: #fd7e14;
+    color: white;
+}
+
+.badge-success-dark {
+    background-color: #28a745;
+    color: white;
+}
+</style>
+
+<script>
+// Apply progress bar widths from data attributes to avoid CSS linting errors with Django template syntax
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.progress-fill[data-width]').forEach(function(el) {
+        el.style.width = el.getAttribute('data-width') + '%';
+    });
+});
+</script>
+{% endblock %}

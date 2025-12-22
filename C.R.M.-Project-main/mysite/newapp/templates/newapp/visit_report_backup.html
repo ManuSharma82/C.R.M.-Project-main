@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visit Reports - CRM</title>
+    <link rel="stylesheet" href="{% static 'newapp/css/crm.css' %}">
+</head>
+<body>
+    <div class="crm-container">
+        {% include 'newapp/includes/navbar.html' %}
+        
+        <div class="page-header">
+            <h1>📊 Visit Reports & Analytics</h1>
+        </div>
+
+        <!-- Date Filter -->
+        <div class="filter-section">
+            <form method="get" class="filter-form">
+                <label>From:</label>
+                <input type="date" name="start_date" value="{{ start_date }}" class="form-input">
+                
+                <label>To:</label>
+                <input type="date" name="end_date" value="{{ end_date }}" class="form-input">
+                
+                <button type="submit" class="btn btn-primary">Generate Report</button>
+                <a href="{% url 'newapp:visit_report' %}" class="btn btn-secondary">Clear</a>
+            </form>
+        </div>
+
+        <!-- Summary Statistics -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📋</div>
+                <div class="stat-number">{{ total_visits }}</div>
+                <div class="stat-label">Total Visits</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">✅</div>
+                <div class="stat-number">{{ completed_visits }}</div>
+                <div class="stat-label">Completed</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">⏳</div>
+                <div class="stat-number">{{ pending_approvals }}</div>
+                <div class="stat-label">Pending Approval</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">👍</div>
+                <div class="stat-number">{{ approved_visits }}</div>
+                <div class="stat-label">Approved</div>
+            </div>
+        </div>
+
+        <!-- Outcome Breakdown -->
+        <div class="detail-card">
+            <h2>📈 Outcome Breakdown</h2>
+            <div class="report-grid">
+                {% for outcome in outcome_stats %}
+                <div class="report-item">
+                    <div class="report-label">
+                        {% if outcome.outcome_type == 'POSITIVE' %}
+                            😊 Positive
+                        {% elif outcome.outcome_type == 'NEUTRAL' %}
+                            😐 Neutral
+                        {% elif outcome.outcome_type == 'NEGATIVE' %}
+                            😞 Negative
+                        {% elif outcome.outcome_type == 'DEAL_CLOSED' %}
+                            🎉 Deal Closed
+                        {% elif outcome.outcome_type == 'FOLLOW_UP' %}
+                            🔄 Follow-up Required
+                        {% else %}
+                            — Not Specified
+                        {% endif %}
+                    </div>
+                    <div class="report-value">{{ outcome.count }}</div>
+                </div>
+                {% empty %}
+                <p>No outcome data available</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Region-wise Breakdown -->
+        {% if region_stats %}
+        <div class="detail-card">
+            <h2>🌍 Region-wise Visit Distribution</h2>
+            <div class="report-grid">
+                {% for region in region_stats %}
+                <div class="report-item">
+                    <div class="report-label">
+                        {% if region.sales_employee__region == 'NORTH' %}
+                            🧭 North
+                        {% elif region.sales_employee__region == 'SOUTH' %}
+                            🧭 South
+                        {% elif region.sales_employee__region == 'EAST' %}
+                            🧭 East
+                        {% elif region.sales_employee__region == 'WEST' %}
+                            🧭 West
+                        {% elif region.sales_employee__region == 'CENTRAL' %}
+                            🧭 Central
+                        {% else %}
+                            — Unassigned
+                        {% endif %}
+                    </div>
+                    <div class="report-value">{{ region.count }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Top Performers -->
+        {% if top_performers %}
+        <div class="detail-card">
+            <h2>🏆 Top Performers</h2>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Employee</th>
+                            <th>Employee ID</th>
+                            <th>Total Visits</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for performer in top_performers %}
+                        <tr>
+                            <td>
+                                {% if forloop.counter == 1 %}
+                                    🥇
+                                {% elif forloop.counter == 2 %}
+                                    🥈
+                                {% elif forloop.counter == 3 %}
+                                    🥉
+                                {% else %}
+                                    {{ forloop.counter }}
+                                {% endif %}
+                            </td>
+                            <td><strong>{{ performer.sales_employee__user__username }}</strong></td>
+                            <td>{{ performer.sales_employee__employee_id }}</td>
+                            <td><span class="badge badge-primary">{{ performer.visit_count }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Recent Visits Detail -->
+        <div class="detail-card">
+            <h2>📋 Recent Visits (Last 50)</h2>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Visit ID</th>
+                            <th>Date</th>
+                            <th>Sales Employee</th>
+                            <th>Prospect</th>
+                            <th>Company</th>
+                            <th>Outcome</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for visit in visits %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'newapp:visit_detail' visit.pk %}">{{ visit.visit_id }}</a>
+                            </td>
+                            <td>{{ visit.visit_date|date:"M d, Y" }}</td>
+                            <td>{{ visit.sales_employee.user.username }}</td>
+                            <td>{{ visit.prospect.name }}</td>
+                            <td>{{ visit.prospect.company_name|default:"—" }}</td>
+                            <td>
+                                {% if visit.outcome_type %}
+                                <span class="badge badge-outcome-{{ visit.outcome_type|lower }}">
+                                    {{ visit.get_outcome_type_display }}
+                                </span>
+                                {% else %}
+                                —
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge badge-{{ visit.approval_status|lower }}">
+                                    {{ visit.get_approval_status_display }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 30px;">
+                                No visits found for the selected date range
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Export Options -->
+        <div class="detail-card">
+            <h2>📥 Export Options</h2>
+            <p>Export functionality can be implemented here (CSV, Excel, PDF)</p>
+            <div style="margin-top: 15px;">
+                <button class="btn btn-secondary" onclick="window.print()">🖨️ Print Report</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

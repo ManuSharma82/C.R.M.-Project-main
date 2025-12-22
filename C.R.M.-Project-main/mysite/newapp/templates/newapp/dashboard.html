@@ -1,0 +1,199 @@
+{% extends 'newapp/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - CRM System{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <div>
+            <h1>📊 Dashboard</h1>
+            <p style="color: var(--text-light); margin-top: 8px;">{% if is_admin %}Admin Overview{% else %}My Performance{% endif %}</p>
+        </div>
+    </div>
+
+    {% if is_sales_employee %}
+        {% if is_admin %}
+            {# ADMIN DASHBOARD #}
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Visits Today</div>
+                    <div class="stat-number">{{ visits_today }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Visits This Month</div>
+                    <div class="stat-number">{{ visits_month }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Leads</div>
+                    <div class="stat-number">{{ total_leads }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Conversion Rate</div>
+                    <div class="stat-number">{{ conversion_rate }}%</div>
+                    <small style="color: var(--text-light);">{{ converted_count }} Converted</small>
+                </div>
+            </div>
+
+            {# Leads by Stage #}
+            <div class="section">
+                <h2>📈 Leads by Stage</h2>
+                <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
+                    {% for stage in leads_by_stage %}
+                    <div class="stat-card" style="text-align: center;">
+                        <div class="stat-label" style="font-size: 0.85em;">{{ stage.status }}</div>
+                        <div class="stat-number" style="font-size: 1.8em;">{{ stage.count }}</div>
+                    </div>
+                    {% empty %}
+                    <p style="color: var(--text-light);">No leads data available</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {# Employee Performance #}
+            <div class="section">
+                <h2>👥 Employee Performance (Top 10)</h2>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Role</th>
+                                <th>Total Visits</th>
+                                <th>Completed</th>
+                                <th>Pending</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for emp in employee_performance %}
+                            <tr>
+                                <td><strong>{{ emp.user.get_full_name|default:emp.user.username }}</strong></td>
+                                <td><span class="badge badge-info">{{ emp.get_role_display }}</span></td>
+                                <td>{{ emp.visit_count }}</td>
+                                <td><span class="badge badge-success">{{ emp.completed_visits }}</span></td>
+                                <td><span class="badge badge-warning">{{ emp.pending_visits }}</span></td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" style="text-align: center; color: var(--text-light);">No employee data available</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        {% else %}
+            {# SALES EXECUTIVE/REP DASHBOARD #}
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Today's Visits</div>
+                    <div class="stat-number">{{ visits_today }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Monthly Visits</div>
+                    <div class="stat-number">{{ visits_month }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Active Leads</div>
+                    <div class="stat-number">{{ active_leads }}</div>
+                    <small style="color: var(--text-light);">of {{ total_leads }} total</small>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Conversion Rate</div>
+                    <div class="stat-number">{{ conversion_rate }}%</div>
+                    <small style="color: var(--text-light);">{{ converted_count }} Converted</small>
+                </div>
+            </div>
+
+            {# My Leads by Stage #}
+            <div class="section">
+                <h2>📈 My Leads by Stage</h2>
+                <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
+                    {% for stage in leads_by_stage %}
+                    <div class="stat-card" style="text-align: center;">
+                        <div class="stat-label" style="font-size: 0.85em;">{{ stage.status }}</div>
+                        <div class="stat-number" style="font-size: 1.8em;">{{ stage.count }}</div>
+                    </div>
+                    {% empty %}
+                    <p style="color: var(--text-light);">No leads data available</p>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+
+        {# Upcoming Follow-ups #}
+        <div class="section">
+            <h2>🔔 Upcoming Follow-ups (Next 7 Days)</h2>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            {% if is_admin %}<th>Sales Rep</th>{% endif %}
+                            <th>Prospect</th>
+                            <th>Company</th>
+                            <th>Follow-up Date</th>
+                            <th>Last Visit</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for visit in upcoming_followups %}
+                        <tr>
+                            {% if is_admin %}
+                            <td><strong>{{ visit.sales_employee.user.get_full_name|default:visit.sales_employee.user.username }}</strong></td>
+                            {% endif %}
+                            <td><strong>{{ visit.prospect.name }}</strong></td>
+                            <td>{{ visit.prospect.company_name|default:"Individual" }}</td>
+                            <td><span class="badge badge-warning">{{ visit.next_follow_up_date }}</span></td>
+                            <td><small>{{ visit.visit_date }}</small></td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="{% if is_admin %}5{% else %}4{% endif %}" style="text-align: center; color: var(--text-light);">
+                                No upcoming follow-ups in the next 7 days
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% if not is_admin and recent_visits %}
+        {# Recent Visits (Sales Rep only) #}
+        <div class="section">
+            <h2>📅 My Recent Visits</h2>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Prospect</th>
+                            <th>Company</th>
+                            <th>Visit Date</th>
+                            <th>Status</th>
+                            <th>Approval</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for visit in recent_visits %}
+                        <tr>
+                            <td><strong>{{ visit.prospect.name }}</strong></td>
+                            <td>{{ visit.prospect.company_name|default:"Individual" }}</td>
+                            <td>{{ visit.visit_date }} {{ visit.visit_time|time:"H:i" }}</td>
+                            <td><span class="badge badge-status-{{ visit.status|lower }}">{{ visit.get_status_display }}</span></td>
+                            <td><span class="badge badge-{{ visit.approval_status|lower }}">{{ visit.get_approval_status_display }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+    {% endif %}
+
+    <script>
+    // Initialize dashboard data for JavaScript
+    window.dashboardData = JSON.parse('{{ dashboard_json|safe }}');
+    </script>
+
+{% endblock %}

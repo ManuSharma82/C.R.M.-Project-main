@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visit Management - CRM</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* Modern Color Palette */
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --secondary: #64748b;
+            --bg-body: #f1f5f9;
+            --bg-card: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            
+            /* Status Colors */
+            --success-bg: #dcfce7; --success-text: #166534;
+            --warning-bg: #fef9c3; --warning-text: #854d0e;
+            --danger-bg: #fee2e2;  --danger-text: #991b1b;
+            --info-bg: #e0f2fe;    --info-text: #075985;
+            
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --radius: 12px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+        }
+
+        .crm-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        /* --- Header --- */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .page-header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin: 0;
+        }
+        
+        /* --- Buttons --- */
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
+        .btn-secondary { background: white; border: 1px solid var(--border); color: var(--text-main); }
+        .btn-secondary:hover { background: #f8fafc; }
+
+        /* --- Stats Grid --- */
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .quick-stat {
+            background: var(--bg-card);
+            padding: 24px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+        .quick-stat .label { font-size: 0.875rem; color: var(--text-muted); font-weight: 500; }
+        .quick-stat .number { font-size: 2rem; font-weight: 700; color: var(--text-main); margin-top: 8px; }
+
+        /* --- Tabs --- */
+        .tabs {
+            display: flex;
+            gap: 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 30px;
+        }
+        .tab {
+            padding: 12px 4px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            font-size: 1rem;
+        }
+        .tab:hover { color: var(--primary); }
+        .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- Visit Cards (Grid Layout) --- */
+        .visits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+        .visit-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        .visit-card:hover {
+            box-shadow: var(--shadow-md);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+        .visit-card::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 4px;
+            background: var(--primary);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .visit-card:hover::before { opacity: 1; }
+
+        .visit-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 15px;
+        }
+        .visit-title { font-weight: 600; font-size: 1.1rem; color: var(--text-main); }
+        .visit-company { color: var(--text-muted); font-size: 0.9rem; margin-top: 4px; }
+        
+        .visit-body { margin-bottom: 20px; font-size: 0.95rem; color: #475569; line-height: 1.5; }
+        
+        .visit-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--border);
+            padding-top: 15px;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        /* --- Badges --- */
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+        .badge-scheduled { background: var(--info-bg); color: var(--info-text); }
+        .badge-completed { background: var(--success-bg); color: var(--success-text); }
+        .badge-cancelled { background: var(--danger-bg); color: var(--danger-text); }
+        .badge-pending { background: var(--warning-bg); color: var(--warning-text); }
+        .badge-approved { background: var(--success-bg); color: var(--success-text); }
+
+        /* --- Table Styling --- */
+        .table-container {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th { 
+            background: #f8fafc; 
+            padding: 16px; 
+            text-align: left; 
+            font-weight: 600; 
+            color: var(--text-muted); 
+            font-size: 0.85rem; 
+            text-transform: uppercase;
+        }
+        .data-table td { padding: 16px; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
+        .data-table tr:last-child td { border-bottom: none; }
+        .data-table tr:hover { background-color: #f8fafc; }
+
+        /* --- Slide-out Drawer (Replaces Modal) --- */
+        .drawer-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 998;
+            opacity: 0; visibility: hidden; transition: all 0.3s;
+            backdrop-filter: blur(2px);
+        }
+        .drawer-overlay.active { opacity: 1; visibility: visible; }
+        
+        .drawer {
+            position: fixed; top: 0; right: -600px; bottom: 0;
+            width: 100%; max-width: 550px;
+            background: white;
+            z-index: 999;
+            box-shadow: -4px 0 20px rgba(0,0,0,0.1);
+            transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+        }
+        .drawer.active { right: 0; }
+        
+        .drawer-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .drawer-body { padding: 24px; overflow-y: auto; flex: 1; }
+        .drawer-footer {
+            padding: 20px 24px;
+            border-top: 1px solid var(--border);
+            background: #f8fafc;
+            display: flex; gap: 10px; justify-content: flex-end;
+        }
+
+        /* Form Elements */
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.9rem; color: var(--text-main); }
+        .form-input {
+            width: 100%; padding: 10px 12px;
+            border: 1px solid var(--border); border-radius: 8px;
+            font-size: 0.95rem; font-family: inherit;
+            box-sizing: border-box; transition: border-color 0.2s;
+        }
+        .form-input:focus { outline: none; border-color: var(--primary); ring: 2px solid #e0e7ff; }
+        .inline-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+
+    </style>
+</head>
+<body>
+
+    <div class="crm-container">
+        {% include 'newapp/includes/navbar.html' %}
+        
+        <div class="page-header">
+            <div>
+                <h1>Visit Management</h1>
+                <p style="color: var(--text-muted); margin-top: 5px;">Track meetings, outcomes, and follow-ups.</p>
+            </div>
+            <button onclick="openDrawer()" class="btn btn-primary">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                Log New Visit
+            </button>
+        </div>
+
+        <div class="quick-stats">
+            <div class="quick-stat">
+                <span class="label">Today's Visits</span>
+                <span class="number">{{ todays_visits|default:0 }}</span>
+            </div>
+            <div class="quick-stat">
+                <span class="label">This Week</span>
+                <span class="number">{{ week_visits|default:0 }}</span>
+            </div>
+            <div class="quick-stat">
+                <span class="label">Pending Approval</span>
+                <span class="number" style="color: var(--warning-text)">{{ pending_visits|default:0 }}</span>
+            </div>
+            <div class="quick-stat">
+                <span class="label">Total Visits</span>
+                <span class="number" style="color: var(--primary)">{{ total_visits|default:0 }}</span>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('my-visits')">My Visits</button>
+            <button class="tab" onclick="switchTab('pending-approval')">
+                Pending Approval 
+                {% if pending_visits > 0 %}<span style="background:var(--danger-bg); color:var(--danger-text); padding:2px 6px; border-radius:10px; font-size:0.7em; margin-left:5px;">{{ pending_visits }}</span>{% endif %}
+            </button>
+            <button class="tab" onclick="switchTab('all-visits')">All History</button>
+            <button class="tab" onclick="switchTab('reports')">Analytics</button>
+        </div>
+
+        <div id="my-visits" class="tab-content active">
+            
+            <div style="margin-bottom: 25px; background: white; padding: 15px; border-radius: 8px; border: 1px solid var(--border); display: flex; gap: 10px; flex-wrap: wrap;">
+                <form method="get" style="display: flex; gap: 10px; width: 100%; align-items: center;">
+                    <input type="date" name="start_date" class="form-input" style="width: auto;">
+                    <input type="date" name="end_date" class="form-input" style="width: auto;">
+                    <select name="status" class="form-input" style="width: auto;">
+                        <option value="">All Statuses</option>
+                        <option value="SCHEDULED">Scheduled</option>
+                        <option value="COMPLETED">Completed</option>
+                    </select>
+                    <button type="submit" class="btn btn-secondary">Filter</button>
+                </form>
+            </div>
+
+            <div class="visits-grid">
+                {% for visit in my_visits %}
+                <div class="visit-card" onclick="openVisitDetails('{{ visit.id }}')">
+                    <div class="visit-header">
+                        <div>
+                            <div class="visit-title">{{ visit.prospect.name }}</div>
+                            <div class="visit-company">{{ visit.prospect.company_name|default:"Individual" }}</div>
+                        </div>
+                        <span class="badge badge-{{ visit.status|lower }}">{{ visit.get_status_display }}</span>
+                    </div>
+                    
+                    <div class="visit-body">
+                        {{ visit.meeting_agenda|truncatewords:20 }}
+                    </div>
+
+                    <div class="visit-footer">
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            {{ visit.visit_date|date:"M d, Y" }}
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            {{ visit.visit_time|time:"H:i" }}
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div style="grid-column: 1/-1; text-align: center; padding: 60px; color: var(--text-muted);">
+                    <div style="font-size: 3rem; margin-bottom: 10px;">📭</div>
+                    No visits found. Log your first visit to get started.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div id="pending-approval" class="tab-content">
+            {% if is_approver %}
+                <div class="visits-grid">
+                    {% for visit in pending_approval_visits %}
+                    <div class="visit-card" style="border-left: 4px solid var(--warning-text);">
+                        <div class="visit-header">
+                            <div>
+                                <div class="visit-title">{{ visit.prospect.name }}</div>
+                                <div class="visit-company">Rep: <strong>{{ visit.sales_employee.user.username }}</strong></div>
+                            </div>
+                            <span class="badge badge-pending">Needs Approval</span>
+                        </div>
+                        <div class="visit-body">
+                            {{ visit.meeting_agenda|truncatewords:15 }}
+                        </div>
+                        <div style="margin-top: 15px; display: flex; gap: 10px;">
+                            <form method="post" action="{% url 'newapp:visit_approve' visit.pk %}" style="width: 100%;">
+                                {% csrf_token %}
+                                <input type="hidden" name="approval_status" value="APPROVED">
+                                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; background-color: var(--success-text);">Approve</button>
+                            </form>
+                            <form method="post" action="{% url 'newapp:visit_approve' visit.pk %}" style="width: 100%;">
+                                {% csrf_token %}
+                                <input type="hidden" name="approval_status" value="REJECTED">
+                                <button type="submit" class="btn btn-secondary" style="width: 100%; justify-content: center; color: var(--danger-text); border-color: var(--danger-bg);">Reject</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">No pending approvals.</div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p style="text-align: center; padding: 40px;">You don't have permission to approve visits.</p>
+            {% endif %}
+        </div>
+
+        <div id="all-visits" class="tab-content">
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Prospect</th>
+                            <th>Date</th>
+                            <th>Rep</th>
+                            <th>Status</th>
+                            <th>Outcome</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for visit in all_visits %}
+                        <tr>
+                            <td>
+                                <div style="font-weight: 500;">{{ visit.prospect.name }}</div>
+                                <div style="font-size: 0.8em; color: var(--text-muted);">{{ visit.visit_id }}</div>
+                            </td>
+                            <td>{{ visit.visit_date|date:"M d, Y" }}</td>
+                            <td>{{ visit.sales_employee.user.username }}</td>
+                            <td><span class="badge badge-{{ visit.status|lower }}">{{ visit.get_status_display }}</span></td>
+                            <td>{{ visit.get_outcome_type_display|default:"-" }}</td>
+                            <td>
+                                <button onclick="openVisitDetails('{{ visit.id }}')" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.8rem;">View</button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="6" style="text-align: center; padding: 30px;">No visits found</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="reports" class="tab-content">
+            <div style="text-align: center; padding: 40px; background: white; border-radius: 12px; border: 1px solid var(--border);">
+                <h3>Detailed Reports</h3>
+                <p>View comprehensive analytics about team performance.</p>
+                <a href="{% url 'newapp:visit_report' %}" class="btn btn-primary" style="margin-top: 10px;">Go to Reports Dashboard</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="drawerOverlay" class="drawer-overlay" onclick="closeDrawer()"></div>
+    <div id="visitDrawer" class="drawer">
+        <div class="drawer-header">
+            <h2 style="font-size: 1.25rem; font-weight: 600; margin: 0;">Log New Visit</h2>
+            <button onclick="closeDrawer()" style="background:none; border:none; font-size: 1.5rem; cursor:pointer; color: var(--text-muted);">&times;</button>
+        </div>
+        
+        <form id="visitForm" method="post" action="{% url 'newapp:visit_create' %}" enctype="multipart/form-data" style="display: flex; flex-direction: column; height: 100%;">
+            {% csrf_token %}
+            <div class="drawer-body">
+                
+                <h4 style="margin-top: 0; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 8px;">1. Basic Info</h4>
+                
+                <div class="form-group">
+                    <label>Prospect / Customer *</label>
+                    <select name="prospect" class="form-input" required>
+                        <option value="">Select prospect...</option>
+                        {% for prospect in prospects %}
+                        <option value="{{ prospect.id }}">{{ prospect.name }} - {{ prospect.company_name|default:"Individual" }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="inline-row">
+                    <div class="form-group">
+                        <label>Date *</label>
+                        <input type="date" name="visit_date" class="form-input" value="{{ today }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Time *</label>
+                        <input type="time" name="visit_time" class="form-input" value="{{ current_time }}" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Status</label>
+                    <select name="status" class="form-input" required>
+                        <option value="SCHEDULED">Scheduled</option>
+                        <option value="COMPLETED" selected>Completed</option>
+                        <option value="CANCELLED">Cancelled</option>
+                    </select>
+                </div>
+
+                <h4 style="color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-top: 30px;">2. Meeting Details</h4>
+
+                <div class="form-group">
+                    <label>Agenda *</label>
+                    <textarea name="meeting_agenda" class="form-input" rows="3" required placeholder="Purpose of visit..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Outcome Notes</label>
+                    <textarea name="meeting_outcome" class="form-input" rows="3" placeholder="Summary of discussion..."></textarea>
+                </div>
+
+                <div class="inline-row">
+                    <div class="form-group">
+                        <label>Outcome Type</label>
+                        <select name="outcome_type" class="form-input">
+                            <option value="">Select...</option>
+                            <option value="POSITIVE">Positive</option>
+                            <option value="NEUTRAL">Neutral</option>
+                            <option value="NEGATIVE">Negative</option>
+                            <option value="DEAL_CLOSED">Deal Closed</option>
+                            <option value="FOLLOW_UP">Follow Up</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Next Follow-up</label>
+                        <input type="date" name="next_follow_up_date" class="form-input">
+                    </div>
+                </div>
+
+                <h4 style="color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-top: 30px;">3. Location & Files</h4>
+                
+                <div class="inline-row">
+                    <div class="form-group">
+                        <label>Lat</label>
+                        <input type="number" step="any" name="gps_latitude" class="form-input" placeholder="Latitude">
+                    </div>
+                    <div class="form-group">
+                        <label>Long</label>
+                        <input type="number" step="any" name="gps_longitude" class="form-input" placeholder="Longitude">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Attach Photo/Card</label>
+                    <input type="file" name="photo" class="form-input" accept="image/*">
+                </div>
+            </div>
+
+            <div class="drawer-footer">
+                <button type="button" onclick="closeDrawer()" class="btn btn-secondary">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Visit Log</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            
+            // Show selected
+            document.getElementById(tabName).classList.add('active');
+            
+            // Highlight button (find button with onclick matching tabName)
+            const buttons = Array.from(document.querySelectorAll('.tab'));
+            const activeButton = buttons.find(btn => btn.getAttribute('onclick').includes(tabName));
+            if(activeButton) activeButton.classList.add('active');
+        }
+
+        function openDrawer() {
+            document.getElementById('visitDrawer').classList.add('active');
+            document.getElementById('drawerOverlay').classList.add('active');
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        }
+
+        function closeDrawer() {
+            document.getElementById('visitDrawer').classList.remove('active');
+            document.getElementById('drawerOverlay').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        function openVisitDetails(visitId) {
+            window.location.href = `/visits/${visitId}/`;
+        }
+
+        // Auto-get Location
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                const latInput = document.querySelector('input[name="gps_latitude"]');
+                const longInput = document.querySelector('input[name="gps_longitude"]');
+                if(latInput && longInput) {
+                    latInput.value = position.coords.latitude.toFixed(6);
+                    longInput.value = position.coords.longitude.toFixed(6);
+                }
+            });
+        }
+    </script>
+</body>
+</html>

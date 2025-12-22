@@ -1,0 +1,344 @@
+{% extends 'newapp/base.html' %}
+{% load static %}
+
+{% block title %}Visit Management Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* --- 1. SIZE & DIMENSION CONTROLS (Edit these to change Height/Width) --- */
+    :root {
+        /* Page Width: Use '100%' for full screen, or '1400px' for fixed size */
+        --page-width: 98%; 
+        
+        /* Header Height: Controls how tall the blue 'Visit Management' bar is */
+        --header-height: 80px; 
+        
+        /* Spacing between elements */
+        --gap-size: 24px; 
+        
+        /* Colors extracted from your image */
+        --bg-color: #f3f4f8;
+        --card-bg: #ffffff;
+        --primary-gradient: linear-gradient(90deg, #2563eb 0%, #7c3aed 100%); /* Blue to Purple */
+    }
+
+    /* --- 2. BASE STYLES --- */
+    body {
+        background-color: var(--bg-color);
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        color: #333;
+    }
+
+    .crm-container {
+        width: var(--page-width);  /* Controlled by variable above */
+        max-width: 1800px;         /* Prevents it from getting too wide on huge screens */
+        margin: 0 auto;            /* Centers the container */
+        padding-bottom: 40px;
+    }
+
+    /* --- 3. HEADER SECTION (The Blue Bar) --- */
+    .crm-header {
+        background: var(--primary-gradient, linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%));
+        height: var(--header-height); /* Controlled by variable above */
+        border-radius: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 24px;
+        margin-bottom: var(--gap-size);
+        box-shadow: 0 2px 10px rgba(0, 0, 0,0.1);
+        color: white;
+    }
+
+    .crm-header h1 {
+        font-size: 1.4rem;
+        font-weight: 700;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .crm-header p {
+        margin: 0 0 0 15px;
+        opacity: 0.9;
+        font-size: 0.9rem;
+        border-left: 1px solid rgba(255,255,255,0.3);
+        padding-left: 15px;
+        display: inline-block;
+        color: white;
+    }
+
+    .btn-header {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        padding: 10px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.2s;
+        backdrop-filter: blur(4px);
+        font-size: 0.9rem;
+    }
+    .btn-header:hover {
+        background: white;
+        color: #4f46e5;
+        transform: translateY(-1px);
+    }
+
+    @media (max-width: 768px) {
+        .crm-header {
+            flex-direction: column;
+            height: auto;
+            padding: 20px;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        .crm-header p {
+            display: block;
+            border-left: none;
+            padding-left: 0;
+            margin: 5px 0 0 0;
+        }
+        .btn-header {
+            width: 100%;
+        }
+    }
+
+    /* --- 4. STATS CARDS --- */
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: var(--gap-size);
+        margin-bottom: var(--gap-size);
+    }
+
+    .stat-card {
+        background: var(--card-bg);
+        padding: 20px;
+        border-radius: 12px;
+        text-align: center;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+        border-top: 4px solid #ccc; /* Default border */
+    }
+
+    /* Specific border colors matching your image */
+    .border-purple { border-top-color: #7c3aed; }
+    .border-blue { border-top-color: #2563eb; }
+    .border-orange { border-top-color: #f59e0b; }
+
+    .stat-label { font-size: 0.8rem; text-transform: uppercase; color: #666; font-weight: 600; letter-spacing: 0.5px; }
+    .stat-number { font-size: 2.2rem; font-weight: 700; color: #333; margin-top: 5px; line-height: 1; }
+
+    /* --- 5. MAIN CONTENT SPLIT (Table & Sidebar) --- */
+    .main-grid {
+        display: grid;
+        grid-template-columns: 3fr 1fr; /* 75% Table, 25% Sidebar */
+        gap: var(--gap-size);
+    }
+
+    @media (max-width: 1024px) {
+        .main-grid { grid-template-columns: 1fr; } /* Stack on smaller screens */
+    }
+
+    .content-card {
+        background: var(--card-bg);
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+        overflow: hidden;
+        padding: 20px;
+    }
+
+    .section-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; display: block; color: #1f2937; }
+
+    /* Filters */
+    .filter-bar { display: flex; gap: 10px; margin-bottom: 20px; }
+    .filter-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; background: #f9f9f9; }
+    .btn-filter { background: #2563eb; color: white; border: none; padding: 0 20px; border-radius: 6px; cursor: pointer; }
+
+    /* Table */
+    .clean-table { width: 100%; border-collapse: collapse; }
+    .clean-table th { text-align: left; padding: 12px; background: #f8f9fa; color: #666; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; }
+    .clean-table td { padding: 15px 12px; border-bottom: 1px solid #eee; font-size: 0.9rem; color: #333; }
+    .clean-table tr:last-child td { border-bottom: none; }
+    
+    .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; display: inline-block; }
+    .st-scheduled { background: #e0e7ff; color: #3730a3; }
+    .st-completed { background: #dcfce7; color: #166534; }
+    .st-pending { background: #ffedd5; color: #9a3412; }
+
+    /* Sidebar Items */
+    .side-item { padding: 15px; border-bottom: 1px solid #eee; background: #fcfcfc; border-radius: 8px; margin-bottom: 10px; }
+    .side-item h4 { margin: 0; font-size: 0.95rem; }
+    .side-item p { margin: 5px 0 0; font-size: 0.8rem; color: #666; }
+
+    /* --- 6. SLIDE-OUT DRAWER (For 'Log New Visit') --- */
+    .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 998; opacity: 0; visibility: hidden; transition: 0.3s; }
+    .drawer { position: fixed; top: 0; right: -500px; width: 450px; height: 100%; background: white; z-index: 999; transition: 0.3s; padding: 30px; box-shadow: -5px 0 20px rgba(0,0,0,0.2); overflow-y: auto; }
+    .drawer.active { right: 0; }
+    .drawer-overlay.active { opacity: 1; visibility: visible; }
+
+    /* Drawer Form */
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.9rem; }
+    .form-control { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
+    .btn-submit { width: 100%; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 10px; }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="crm-container">
+
+    <div class="crm-header">
+        <div>
+            <h1>📅 Visit Management</h1>
+        </div>
+        <div>
+            <button onclick="openDrawer()" class="btn-header">+ Log New Visit</button>
+        </div>
+    </div>
+
+    <div class="stats-row">
+        <div class="stat-card border-purple">
+            <div class="stat-label">Total Visits</div>
+            <div class="stat-number">{{ total_visits }}</div>
+        </div>
+        <div class="stat-card border-blue">
+            <div class="stat-label">This Week</div>
+            <div class="stat-number">{{ week_visits }}</div>
+        </div>
+        <div class="stat-card border-blue">
+            <div class="stat-label">Today's Schedule</div>
+            <div class="stat-number">{{ todays_visits }}</div>
+        </div>
+        <div class="stat-card border-orange">
+            <div class="stat-label">Pending Approval</div>
+            <div class="stat-number">{{ pending_visits }}</div>
+        </div>
+    </div>
+
+    <div class="main-grid">
+        
+        <div class="content-card">
+            <span class="section-title">All Visits</span>
+            
+            <form method="get" class="filter-bar">
+                <input type="text" name="search" placeholder="Search prospect..." class="filter-input">
+                <select name="status" class="filter-input" style="max-width: 150px;">
+                    <option value="">All Status</option>
+                    <option value="SCHEDULED">Scheduled</option>
+                    <option value="COMPLETED">Completed</option>
+                </select>
+                <button type="submit" class="btn-filter">Filter</button>
+            </form>
+
+            <table class="clean-table">
+                <thead>
+                    <tr>
+                        <th>Prospect</th>
+                        <th>Date & Time</th>
+                        <th>Status</th>
+                        <th>Outcome</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for visit in all_visits %}
+                    <tr>
+                        <td><strong>{{ visit.prospect.name }}</strong></td>
+                        <td>{{ visit.visit_date }} <small style="color:#888">{{ visit.visit_time|time:"H:i" }}</small></td>
+                        <td><span class="status-badge st-{{ visit.status|lower }}">{{ visit.get_status_display }}</span></td>
+                        <td>{{ visit.get_outcome_type_display|default:"-" }}</td>
+                        <td>
+                            <a href="{% url 'newapp:visit_edit' visit.id %}" style="color: #2563eb; text-decoration: none; font-weight: 600;">Edit</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" style="text-align:center; padding: 30px; color:#888;">No visits found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+            
+            <div class="content-card">
+                <span class="section-title">Upcoming (Scheduled)</span>
+                {% for visit in my_visits %}
+                    {% if visit.status == 'SCHEDULED' %}
+                    <div class="side-item">
+                        <h4>{{ visit.prospect.name }}</h4>
+                        <p>📅 {{ visit.visit_date }} at {{ visit.visit_time|time:"H:i" }}</p>
+                    </div>
+                    {% endif %}
+                {% empty %}
+                    <p style="color:#888; font-size:0.9rem;">No upcoming visits.</p>
+                {% endfor %}
+            </div>
+
+            {% if pending_approval_visits %}
+            <div class="content-card" style="border-top: 4px solid #f59e0b;">
+                <span class="section-title" style="color:#d97706;">Pending Approvals</span>
+                {% for visit in pending_approval_visits %}
+                <div class="side-item">
+                    <h4>{{ visit.prospect.name }}</h4>
+                    <p>Sub: {{ visit.created_at|date:"M d" }}</p>
+                    <a href="{% url 'newapp:visit_detail' visit.id %}" style="display:block; margin-top:5px; color:#d97706; font-size:0.8rem; font-weight:600;">Review ></a>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+
+<div id="drawerOverlay" class="drawer-overlay" onclick="closeDrawer()"></div>
+<div id="visitDrawer" class="drawer">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <h2 style="margin:0;">Log New Visit</h2>
+        <span onclick="closeDrawer()" style="cursor:pointer; font-size:1.5rem;">&times;</span>
+    </div>
+
+    <form method="post" action="{% url 'newapp:visit_create' %}">
+        {% csrf_token %}
+        <div class="form-group">
+            <label>Prospect *</label>
+            <select name="prospect" class="form-control" required>
+                <option value="">Select Prospect</option>
+                {% for prospect in prospects %}
+                <option value="{{ prospect.id }}">{{ prospect.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+            <div class="form-group">
+                <label>Date *</label>
+                <input type="date" name="visit_date" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>Time *</label>
+                <input type="time" name="visit_time" class="form-control" required>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Agenda</label>
+            <textarea name="meeting_agenda" class="form-control" rows="3"></textarea>
+        </div>
+        <button type="submit" class="btn-submit">Save Visit</button>
+    </form>
+</div>
+
+<script>
+    function openDrawer() {
+        document.getElementById('visitDrawer').classList.add('active');
+        document.getElementById('drawerOverlay').classList.add('active');
+    }
+    function closeDrawer() {
+        document.getElementById('visitDrawer').classList.remove('active');
+        document.getElementById('drawerOverlay').classList.remove('active');
+    }
+</script>
+{% endblock %}

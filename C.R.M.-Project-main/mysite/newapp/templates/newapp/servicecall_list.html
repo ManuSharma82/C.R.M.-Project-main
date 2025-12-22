@@ -1,0 +1,195 @@
+{% extends 'newapp/base.html' %}
+{% load static %}
+
+{% block title %}Service Calls - CRM System{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="page-header">
+        <div class="page-header-content">
+            <h1>🔧 Service Calls</h1>
+            <a href="{% url 'newapp:servicecall_create' %}" class="btn btn-primary">
+                ➕ New Service Call
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters and Search -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="filter-form">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <input type="text" name="search" value="{{ search_query }}" 
+                               placeholder="Search service calls..." class="form-input">
+                    </div>
+                    <div class="filter-group">
+                        <select name="status" class="form-input">
+                            <option value="">All Status</option>
+                            {% for status_key, status_label in status_choices %}
+                                <option value="{{ status_key }}" {% if status_filter == status_key %}selected{% endif %}>
+                                    {{ status_label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <select name="priority" class="form-input">
+                            <option value="">All Priority</option>
+                            {% for priority_key, priority_label in priority_choices %}
+                                <option value="{{ priority_key }}" {% if priority_filter == priority_key %}selected{% endif %}>
+                                    {{ priority_label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <button type="submit" class="btn btn-secondary">🔍 Filter</button>
+                        <a href="{% url 'newapp:servicecall_list' %}" class="btn btn-outline">↻ Reset</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Service Calls List -->
+    <div class="card">
+        <div class="card-body">
+            {% if service_calls %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Call ID</th>
+                                <th>Customer</th>
+                                <th>Contact</th>
+                                <th>Service Type</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Assigned To</th>
+                                <th>Scheduled Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for service_call in service_calls %}
+                                <tr>
+                                    <td><strong>{{ service_call.call_id }}</strong></td>
+                                    <td>{{ service_call.customer.name }}</td>
+                                    <td>{{ service_call.contact_person }}</td>
+                                    <td>
+                                        <span class="badge badge-service-type-{{ service_call.service_type|lower }}">
+                                            {{ service_call.get_service_type_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-priority-{{ service_call.priority|lower }}">
+                                            {{ service_call.get_priority_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-status-{{ service_call.status|lower }}">
+                                            {{ service_call.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ service_call.assigned_to.user.get_full_name|default:service_call.assigned_to.user.username }}</td>
+                                    <td>{{ service_call.scheduled_date|date:"M d, Y H:i" }}</td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <a href="{% url 'newapp:servicecall_detail' service_call.pk %}" 
+                                               class="btn-small btn-info" title="View Details">👁️</a>
+                                            <a href="{% url 'newapp:servicecall_edit' service_call.pk %}" 
+                                               class="btn-small btn-warning" title="Edit">✏️</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if is_paginated %}
+                    <div class="pagination">
+                        <span class="page-info">
+                            Page {{ page_obj.start_index }} - {{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+                        </span>
+                        <div class="page-links">
+                            {% if page_obj.has_previous %}
+                                <a href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}" class="page-link">« First</a>
+                                <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}" class="page-link">‹ Previous</a>
+                            {% endif %}
+                            
+                            <span class="page-current">{{ page_obj.number }}</span>
+                            
+                            {% if page_obj.has_next %}
+                                <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}" class="page-link">Next ›</a>
+                                <a href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}" class="page-link">Last »</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">🔧</div>
+                    <h3>No Service Calls Found</h3>
+                    <p>No service calls match your current filters.</p>
+                    <a href="{% url 'newapp:servicecall_create' %}" class="btn btn-primary">
+                        Create Your First Service Call
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.badge-priority-critical { background-color: #dc3545; color: white; }
+.badge-priority-high { background-color: #fd7e14; color: white; }
+.badge-priority-medium { background-color: #ffc107; color: black; }
+.badge-priority-low { background-color: #28a745; color: white; }
+
+.badge-service-type-breakdown { background-color: #dc3545; color: white; }
+.badge-service-type-preventive { background-color: #17a2b8; color: white; }
+.badge-service-type-installation { background-color: #28a745; color: white; }
+.badge-service-type-calibration { background-color: #6f42c1; color: white; }
+.badge-service-type-warranty { background-color: #fd7e14; color: white; }
+.badge-service-type-amc { background-color: #20c997; color: white; }
+.badge-service-type-inspection { background-color: #6c757d; color: white; }
+.badge-service-type-training { background-color: #e83e8c; color: white; }
+
+.filter-row {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.filter-group input,
+.filter-group select {
+    min-width: 150px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 5px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+</style>
+{% endblock %}

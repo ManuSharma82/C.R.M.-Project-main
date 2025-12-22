@@ -1,0 +1,161 @@
+{% extends 'newapp/base.html' %}
+
+{% block title %}Sales Orders - CRM{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📦 Sales Order List</h1>
+    <div class="page-header-actions">
+        <a href="{% url 'newapp:salesorder_create' %}" class="btn btn-primary">➕ New Order</a>
+    </div>
+</div>
+
+<!-- Filters Section -->
+<div class="filter-section">
+    <form method="get" class="filter-form">
+        <div class="form-group">
+            <input type="text" name="search" value="{{ search }}" class="form-input" placeholder="Search by Order No, Customer...">
+        </div>
+        
+        <div class="form-group">
+            <input type="date" name="start_date" value="{{ start_date }}" class="form-input" placeholder="Start Date">
+        </div>
+        
+        <div class="form-group">
+            <input type="date" name="end_date" value="{{ end_date }}" class="form-input" placeholder="End Date">
+        </div>
+        
+        <div class="form-group">
+            <select name="salesperson" class="form-input">
+                <option value="">All Salespeople</option>
+                {% for emp in sales_employees %}
+                <option value="{{ emp.id }}" {% if current_salesperson == emp.id|stringformat:"s" %}selected{% endif %}>
+                    {{ emp.user.get_full_name|default:emp.user.username }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <select name="status" class="form-input">
+                <option value="">All Statuses</option>
+                {% for value, label in status_choices %}
+                <option value="{{ value }}" {% if current_status == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <select name="customer" class="form-input">
+                <option value="">All Customers</option>
+                {% for prospect in prospects %}
+                <option value="{{ prospect.id }}" {% if current_customer == prospect.id|stringformat:"s" %}selected{% endif %}>
+                    {{ prospect.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <input type="number" name="min_amount" value="{{ min_amount }}" class="form-input" placeholder="Min Amount" step="0.01">
+        </div>
+        
+        <div class="form-group">
+            <input type="number" name="max_amount" value="{{ max_amount }}" class="form-input" placeholder="Max Amount" step="0.01">
+        </div>
+        
+        <div class="form-group">
+            <button type="submit" class="btn btn-primary">Apply Filters</button>
+        </div>
+        <div class="form-group">
+            <a href="{% url 'newapp:salesorder_list' %}" class="btn btn-default">Clear</a>
+        </div>
+    </form>
+</div>
+
+<!-- Sales Orders Table -->
+{% if orders %}
+<div class="table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Order No</th>
+                <th>Date</th>
+                <th>Prospect</th>
+                <th>Amount</th>
+                <th>Valid Till</th>
+                <th>Status</th>
+                <th>Assigned To</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td><strong>{{ order.order_number }}</strong></td>
+                <td>{{ order.order_date|date:"M d, Y" }}</td>
+                <td>
+                    <strong>{{ order.prospect.name }}</strong>
+                    {% if order.prospect.company_name %}
+                    <br><small>{{ order.prospect.company_name }}</small>
+                    {% endif %}
+                </td>
+                <td><strong>{{ order.currency }} {{ order.net_amount|floatformat:2 }}</strong></td>
+                <td>
+                    {% if order.is_expired %}
+                    <span class="badge badge-danger">Expired ({{ order.valid_till|date:"M d, Y" }})</span>
+                    {% elif order.days_to_expire <= 3 %}
+                    <span class="badge badge-warning">{{ order.valid_till|date:"M d, Y" }} ({{ order.days_to_expire }} days)</span>
+                    {% else %}
+                    {{ order.valid_till|date:"M d, Y" }}
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="badge badge-{% if order.status == 'DRAFT' %}secondary{% elif order.status == 'APPROVED' or order.status == 'CONFIRMED' or order.status == 'DELIVERED' %}success{% elif order.status == 'PENDING' %}warning{% elif order.status == 'CANCELLED' %}danger{% else %}info{% endif %}">
+                        {{ order.get_status_display }}
+                    </span>
+                </td>
+                <td>{{ order.assigned_to.user.get_full_name|default:order.assigned_to.user.username }}</td>
+                <td class="actions">
+                    <a href="{% url 'newapp:salesorder_detail' order.pk %}" class="btn-small btn-info" title="View">👁️</a>
+                    {% if order.status == 'DRAFT' %}
+                    <a href="{% url 'newapp:salesorder_edit' order.pk %}" class="btn-small btn-warning" title="Edit">✏️</a>
+                    {% endif %}
+                    {% if order.status == 'DRAFT' or order.status == 'APPROVED' %}
+                    <a href="{% url 'newapp:salesorder_confirm' order.pk %}" class="btn-small btn-primary" title="Confirm Order" onclick="return confirm('Confirm this order?')">✓</a>
+                    {% endif %}
+                    {% if user.is_staff and order.status == 'PENDING' %}
+                    <a href="{% url 'newapp:salesorder_approve' order.pk %}" class="btn-small btn-success" title="Approve" onclick="return confirm('Approve this order?')">✅</a>
+                    <a href="{% url 'newapp:salesorder_reject' order.pk %}" class="btn-small btn-danger" title="Reject" onclick="return confirm('Reject this order?')">❌</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if is_paginated %}
+<div class="section" style="display: flex; justify-content: center; align-items: center; gap: var(--spacing-md);">
+    {% if page_obj.has_previous %}
+        <a href="?page=1{% if search %}&search={{ search }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if current_salesperson %}&salesperson={{ current_salesperson }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_customer %}&customer={{ current_customer }}{% endif %}{% if min_amount %}&min_amount={{ min_amount }}{% endif %}{% if max_amount %}&max_amount={{ max_amount }}{% endif %}" class="btn btn-default">First</a>
+        <a href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if current_salesperson %}&salesperson={{ current_salesperson }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_customer %}&customer={{ current_customer }}{% endif %}{% if min_amount %}&min_amount={{ min_amount }}{% endif %}{% if max_amount %}&max_amount={{ max_amount }}{% endif %}" class="btn btn-default">Previous</a>
+    {% endif %}
+    
+    <span style="font-weight: 600; color: var(--text-dark);">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    
+    {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if current_salesperson %}&salesperson={{ current_salesperson }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_customer %}&customer={{ current_customer }}{% endif %}{% if min_amount %}&min_amount={{ min_amount }}{% endif %}{% if max_amount %}&max_amount={{ max_amount }}{% endif %}" class="btn btn-default">Next</a>
+        <a href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if current_salesperson %}&salesperson={{ current_salesperson }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_customer %}&customer={{ current_customer }}{% endif %}{% if min_amount %}&min_amount={{ min_amount }}{% endif %}{% if max_amount %}&max_amount={{ max_amount }}{% endif %}" class="btn btn-default">Last</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="section" style="text-align: center; padding: var(--spacing-xl);">
+    <p style="font-size: 1.5em; color: var(--text-light); margin-bottom: var(--spacing-lg);">📭 No orders found</p>
+    <a href="{% url 'newapp:salesorder_create' %}" class="btn btn-primary">➕ Create Your First Order</a>
+</div>
+{% endif %}
+{% endblock %}

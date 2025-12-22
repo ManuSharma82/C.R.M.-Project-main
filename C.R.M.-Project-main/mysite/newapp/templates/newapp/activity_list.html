@@ -1,0 +1,133 @@
+{% extends 'newapp/base.html' %}
+
+{% block title %}All Activities - CRM{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📊 All Activities</h1>
+    <div class="page-header-actions">
+        <a href="{% url 'newapp:activity_create' %}" class="btn btn-primary">➕ Log New Activity</a>
+        <a href="{% url 'newapp:activity_dashboard' %}" class="btn btn-default">📋 Dashboard</a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="filter-section">
+    <form method="get" class="filter-form">
+        <div class="form-group">
+            <select name="activity_type" class="form-input">
+                <option value="">All Activity Types</option>
+                {% for value, label in activity_types %}
+                <option value="{{ value }}" {% if current_activity_type == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <select name="status" class="form-input">
+                <option value="">All Statuses</option>
+                {% for value, label in activity_statuses %}
+                <option value="{{ value }}" {% if current_status == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <input type="date" name="start_date" value="{{ start_date }}" class="form-input" placeholder="Start Date">
+        </div>
+        
+        <div class="form-group">
+            <input type="date" name="end_date" value="{{ end_date }}" class="form-input" placeholder="End Date">
+        </div>
+        
+        <div class="form-group">
+            <button type="submit" class="btn btn-primary">Apply Filters</button>
+        </div>
+        <div class="form-group">
+            <a href="{% url 'newapp:activity_list' %}" class="btn btn-default">Clear</a>
+        </div>
+    </form>
+</div>
+
+<!-- Activities Table -->
+{% if activities %}
+<div class="table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Activity ID</th>
+                <th>Lead</th>
+                <th>Type</th>
+                <th>Date & Time</th>
+                <th>Summary</th>
+                <th>Status</th>
+                <th>Next Follow-up</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for activity in activities %}
+            <tr>
+                <td><strong>{{ activity.activity_id }}</strong></td>
+                <td>
+                    <strong>{{ activity.lead.lead_id }}</strong><br>
+                    <small>{{ activity.lead.prospect.name }}</small>
+                </td>
+                <td>
+                    <span class="badge badge-{% if activity.activity_type == 'CALL' %}primary{% elif activity.activity_type == 'EMAIL' %}info{% elif activity.activity_type == 'MEETING' %}success{% elif activity.activity_type == 'WHATSAPP' %}success{% else %}secondary{% endif %}">
+                        {{ activity.get_activity_type_display }}
+                    </span>
+                </td>
+                <td>
+                    {{ activity.activity_date|date:"M d, Y" }}<br>
+                    <small>{{ activity.activity_time|time:"h:i A" }}</small>
+                </td>
+                <td>{{ activity.discussion_summary|truncatewords:15 }}</td>
+                <td>
+                    <span class="badge badge-{% if activity.status == 'COMPLETED' %}success{% elif activity.status == 'SCHEDULED' %}warning{% elif activity.status == 'CANCELLED' %}danger{% else %}info{% endif %}">
+                        {{ activity.get_status_display }}
+                    </span>
+                </td>
+                <td>
+                    {% if activity.next_followup_date %}
+                    <span class="badge badge-{% if activity.next_followup_date < today %}danger{% elif activity.next_followup_date == today %}warning{% else %}info{% endif %}">
+                        {{ activity.next_followup_date|date:"M d, Y" }}
+                    </span>
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+                <td class="actions">
+                    <a href="{% url 'newapp:activity_detail' activity.pk %}" class="btn-small btn-info" title="View">👁️</a>
+                    <a href="{% url 'newapp:activity_edit' activity.pk %}" class="btn-small btn-warning" title="Edit">✏️</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if is_paginated %}
+<div class="section" style="display: flex; justify-content: center; align-items: center; gap: var(--spacing-md);">
+    {% if page_obj.has_previous %}
+        <a href="?page=1{% if request.GET.activity_type %}&activity_type={{ request.GET.activity_type }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}" class="btn btn-default">First</a>
+        <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.activity_type %}&activity_type={{ request.GET.activity_type }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}" class="btn btn-default">Previous</a>
+    {% endif %}
+    
+    <span style="font-weight: 600; color: var(--text-dark);">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    
+    {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if request.GET.activity_type %}&activity_type={{ request.GET.activity_type }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}" class="btn btn-default">Next</a>
+        <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.activity_type %}&activity_type={{ request.GET.activity_type }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}" class="btn btn-default">Last</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="section" style="text-align: center; padding: var(--spacing-xl);">
+    <p style="font-size: 1.5em; color: var(--text-light); margin-bottom: var(--spacing-lg);">📭 No activities found</p>
+    <a href="{% url 'newapp:activity_create' %}" class="btn btn-primary">➕ Log Your First Activity</a>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if form.instance.pk %}Edit{% else %}Add{% endif %} Prospect - CRM</title>
+    <link rel="stylesheet" href="{% static 'newapp/css/crm.css' %}">
+</head>
+<body>
+    <div class="crm-container">
+        {% include 'newapp/includes/navbar.html' %}
+        
+        <div class="page-header">
+            <h1>{% if form.instance.pk %}✏️ Edit Prospect{% else %}➕ Add New Prospect{% endif %}</h1>
+        </div>
+
+        <div class="form-container">
+            <form method="post" class="crm-form">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                <div class="form-section">
+                    <h3>Basic Information</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="{{ form.name.id_for_label }}">Contact Person Name *</label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <div class="error-message">{{ form.name.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="{{ form.company_name.id_for_label }}">Company Name</label>
+                            {{ form.company_name }}
+                            {% if form.company_name.errors %}
+                                <div class="error-message">{{ form.company_name.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="{{ form.type.id_for_label }}">Type *</label>
+                            {{ form.type }}
+                            {% if form.type.errors %}
+                                <div class="error-message">{{ form.type.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="{{ form.status.id_for_label }}">Status *</label>
+                            {{ form.status }}
+                            {% if form.status.errors %}
+                                <div class="error-message">{{ form.status.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="{{ form.industry.id_for_label }}">Industry</label>
+                            {{ form.industry }}
+                            {% if form.industry.errors %}
+                                <div class="error-message">{{ form.industry.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Contact Details</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="{{ form.phone.id_for_label }}">Phone *</label>
+                            {{ form.phone }}
+                            {% if form.phone.errors %}
+                                <div class="error-message">{{ form.phone.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="{{ form.alternate_phone.id_for_label }}">Alternate Phone</label>
+                            {{ form.alternate_phone }}
+                            {% if form.alternate_phone.errors %}
+                                <div class="error-message">{{ form.alternate_phone.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="{{ form.email.id_for_label }}">Email</label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                                <div class="error-message">{{ form.email.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Address</h3>
+                    <div class="form-group full-width">
+                        <label for="{{ form.address.id_for_label }}">Full Address *</label>
+                        {{ form.address }}
+                        {% if form.address.errors %}
+                            <div class="error-message">{{ form.address.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="{{ form.city.id_for_label }}">City *</label>
+                            {{ form.city }}
+                            {% if form.city.errors %}
+                                <div class="error-message">{{ form.city.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="{{ form.state.id_for_label }}">State *</label>
+                            {{ form.state }}
+                            {% if form.state.errors %}
+                                <div class="error-message">{{ form.state.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="{{ form.pincode.id_for_label }}">Pincode *</label>
+                            {{ form.pincode }}
+                            {% if form.pincode.errors %}
+                                <div class="error-message">{{ form.pincode.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="{{ form.latitude.id_for_label }}">Latitude</label>
+                            {{ form.latitude }}
+                            <small class="help-text">GPS coordinates (optional)</small>
+                            {% if form.latitude.errors %}
+                                <div class="error-message">{{ form.latitude.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="{{ form.longitude.id_for_label }}">Longitude</label>
+                            {{ form.longitude }}
+                            <small class="help-text">GPS coordinates (optional)</small>
+                            {% if form.longitude.errors %}
+                                <div class="error-message">{{ form.longitude.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Assignment & Notes</h3>
+                    <div class="form-group">
+                        <label for="{{ form.assigned_to.id_for_label }}">Assign To</label>
+                        {{ form.assigned_to }}
+                        {% if form.assigned_to.errors %}
+                            <div class="error-message">{{ form.assigned_to.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group full-width">
+                        <label for="{{ form.notes.id_for_label }}">Notes</label>
+                        {{ form.notes }}
+                        {% if form.notes.errors %}
+                            <div class="error-message">{{ form.notes.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        {% if form.instance.pk %}Update Prospect{% else %}Create Prospect{% endif %}
+                    </button>
+                    <a href="{% url 'newapp:prospect_list' %}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

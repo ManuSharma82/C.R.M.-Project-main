@@ -1,0 +1,23 @@
+# MS SQL Server Support for Django
+
+# MS SQL Server database backend for Django
+mssql-django==1.6
+
+# Python ODBC bridge
+pyodbc==5.3.0
+
+# For environment variables (required for settings.py)
+python-decouple==3.8
+
+# Production server (Windows: use IIS/wfastcgi, Linux: gunicorn)
+gunicorn==21.2.0  # For Linux/Unix production servers
+
+# Optional: Azure SQL support
+# azure-identity>=1.15.0
+
+# Note: You also need to install Microsoft ODBC Driver for SQL Server
+# Download from: https://learn.microsoft.com/en-us/sql/connect/odbc/download-odbc-driver-for-sql-server
+# 
+# For Windows:
+# - ODBC Driver 17 for SQL Server
+# - ODBC Driver 18 for SQL Server (recommended)

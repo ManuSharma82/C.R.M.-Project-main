@@ -1,0 +1,655 @@
+{% extends 'newapp/base.html' %}
+
+{% block title %}{{ quotation.quote_number }} - Quotation Details - CRM{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>💰 Quotation Details - {{ quotation.quote_number }}</h1>
+    <div class="page-header-actions">
+        {% if quotation.status == 'DRAFT' %}
+        <a href="{% url 'newapp:quotation_edit' quotation.pk %}" class="btn btn-warning">✏️ Edit</a>
+        {% endif %}
+        {% if quotation.status == 'DRAFT' or quotation.status == 'APPROVED' %}
+        <a href="{% url 'newapp:quotation_send' quotation.pk %}" class="btn btn-primary" onclick="return confirm('Send this quotation to customer?')">📤 Send</a>
+        {% endif %}
+        {% if user.is_staff and quotation.status == 'PENDING' %}
+        <a href="{% url 'newapp:quotation_approve' quotation.pk %}" class="btn btn-success" onclick="return confirm('Approve this quotation?')">✅ Approve</a>
+        <a href="{% url 'newapp:quotation_reject' quotation.pk %}" class="btn btn-danger" onclick="return confirm('Reject this quotation?')">❌ Reject</a>
+        {% endif %}
+        {% if quotation.status == 'APPROVED' or quotation.status == 'SENT' or quotation.status == 'ACCEPTED' %}
+        <a href="{% url 'newapp:salesorder_create' %}?from_quotation={{ quotation.pk }}" class="btn btn-success" style="background: linear-gradient(135deg, #28a745, #20c997);">
+            🔄 Convert to Sales Order
+        </a>
+        {% endif %}
+        <a href="{% url 'newapp:quotation_list' %}" class="btn btn-default">← Back to List</a>
+    </div>
+</div>
+
+<!-- Status Badge -->
+<div class="section" style="text-align: center; padding: var(--spacing-lg); background: #f8f9fa; border-radius: var(--border-radius); margin-bottom: var(--spacing-lg);">
+    <h2 style="margin-bottom: var(--spacing-md);">Status: 
+        <span class="badge badge-{% if quotation.status == 'DRAFT' %}secondary{% elif quotation.status == 'APPROVED' or quotation.status == 'SENT' or quotation.status == 'ACCEPTED' %}success{% elif quotation.status == 'PENDING' %}warning{% elif quotation.status == 'REJECTED' or quotation.status == 'CANCELLED' %}danger{% else %}info{% endif %}" style="font-size: 1.2em;">
+            {{ quotation.get_status_display }}
+        </span>
+    </h2>
+    {% if quotation.is_expired %}
+    <p style="color: #dc3545; font-weight: 600;">⚠️ This quotation has expired!</p>
+    {% elif quotation.days_to_expire <= 3 %}
+    <p style="color: #ffc107; font-weight: 600;">⏰ Expires in {{ quotation.days_to_expire }} day(s)</p>
+    {% endif %}
+</div>
+
+<!-- Side Panel Layout -->
+<div class="side-panel-layout">
+    <!-- Left Side Panel -->
+    <div class="side-panel">
+        <div class="side-panel-header">
+            <h3>📑 Sections</h3>
+        </div>
+        <nav class="side-panel-nav">
+            <button class="side-panel-button active" onclick="openTab(event, 'overview')">
+                <span class="panel-icon">📋</span>
+                <span class="panel-text">Overview</span>
+            </button>
+            <button class="side-panel-button" onclick="openTab(event, 'items')">
+                <span class="panel-icon">📦</span>
+                <span class="panel-text">Items</span>
+            </button>
+            <button class="side-panel-button" onclick="openTab(event, 'attachments')">
+                <span class="panel-icon">📎</span>
+                <span class="panel-text">Attachments</span>
+            </button>
+            <button class="side-panel-button" onclick="openTab(event, 'activities')">
+                <span class="panel-icon">💬</span>
+                <span class="panel-text">Activity Log</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="main-content-area">
+        <!-- Overview Tab -->
+        <div id="overview" class="tab-content active">
+    <div class="section">
+        <h3>📋 Quotation Information</h3>
+        <div class="detail-grid">
+            <div class="detail-item">
+                <label>Quote Number</label>
+                <div><strong>{{ quotation.quote_number }}</strong></div>
+            </div>
+            <div class="detail-item">
+                <label>Quote Date</label>
+                <div>{{ quotation.quote_date|date:"F d, Y" }}</div>
+            </div>
+            <div class="detail-item">
+                <label>Valid Till</label>
+                <div>{{ quotation.valid_till|date:"F d, Y" }}</div>
+            </div>
+            <div class="detail-item">
+                <label>Currency</label>
+                <div>{{ quotation.get_currency_display }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h3>🏢 Customer Information</h3>
+        <div class="detail-grid">
+            <div class="detail-item">
+                <label>Prospect / Customer</label>
+                <div>
+                    <strong>{{ quotation.prospect.name }}</strong>
+                    {% if quotation.prospect.company_name %}
+                    <br><small>{{ quotation.prospect.company_name }}</small>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="detail-item">
+                <label>Contact Person</label>
+                <div>{{ quotation.contact_person }}</div>
+            </div>
+            <div class="detail-item">
+                <label>Contact Email</label>
+                <div>
+                    {% if quotation.contact_email %}
+                    <a href="mailto:{{ quotation.contact_email }}">{{ quotation.contact_email }}</a>
+                    {% else %}-{% endif %}
+                </div>
+            </div>
+            <div class="detail-item">
+                <label>Contact Phone</label>
+                <div>
+                    {% if quotation.contact_phone %}
+                    <a href="tel:{{ quotation.contact_phone }}">{{ quotation.contact_phone }}</a>
+                    {% else %}-{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h3>💰 Amount Summary</h3>
+        <div style="max-width: 500px;">
+            <div class="summary-row">
+                <span>Subtotal:</span>
+                <span>{{ quotation.currency }} {{ quotation.subtotal|floatformat:2 }}</span>
+            </div>
+            <div class="summary-row">
+                <span>Discount ({{ quotation.discount_percentage }}%):</span>
+                <span>{{ quotation.currency }} {{ quotation.discount_amount|floatformat:2 }}</span>
+            </div>
+            <div class="summary-row">
+                <span>Tax Amount:</span>
+                <span>{{ quotation.currency }} {{ quotation.tax_amount|floatformat:2 }}</span>
+            </div>
+            <div class="summary-row">
+                <span>Freight Charges:</span>
+                <span>{{ quotation.currency }} {{ quotation.freight_charges|floatformat:2 }}</span>
+            </div>
+            <div class="summary-row" style="font-size: 1.2em; font-weight: bold; border-top: 2px solid var(--border-color); padding-top: var(--spacing-sm); margin-top: var(--spacing-sm);">
+                <span>Net Amount:</span>
+                <span>{{ quotation.currency }} {{ quotation.net_amount|floatformat:2 }}</span>
+            </div>
+        </div>
+    </div>
+    
+    {% if quotation.reference_lead or quotation.reference_visit or quotation.reference_number %}
+    <div class="section">
+        <h3>🔗 Reference Information</h3>
+        <div class="detail-grid">
+            {% if quotation.reference_lead %}
+            <div class="detail-item">
+                <label>Reference Lead</label>
+                <div><a href="{% url 'newapp:lead_detail' quotation.reference_lead.pk %}">{{ quotation.reference_lead.lead_id }}</a></div>
+            </div>
+            {% endif %}
+            {% if quotation.reference_visit %}
+            <div class="detail-item">
+                <label>Reference Visit</label>
+                <div><a href="{% url 'newapp:visit_detail' quotation.reference_visit.pk %}">{{ quotation.reference_visit.visit_id }}</a></div>
+            </div>
+            {% endif %}
+            {% if quotation.reference_number %}
+            <div class="detail-item">
+                <label>External Reference</label>
+                <div>{{ quotation.reference_number }}</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if quotation.payment_terms or quotation.delivery_terms %}
+    <div class="section">
+        <h3>📜 Terms & Conditions</h3>
+        {% if quotation.payment_terms %}
+        <div class="detail-item">
+            <label>Payment Terms</label>
+            <div class="detail-text">{{ quotation.payment_terms }}</div>
+        </div>
+        {% endif %}
+        {% if quotation.delivery_terms %}
+        <div class="detail-item">
+            <label>Delivery Terms</label>
+            <div class="detail-text">{{ quotation.delivery_terms }}</div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    {% if quotation.customer_remarks or quotation.internal_notes %}
+    <div class="section">
+        <h3>💬 Remarks</h3>
+        {% if quotation.customer_remarks %}
+        <div class="detail-item">
+            <label>Customer Remarks</label>
+            <div class="detail-text">{{ quotation.customer_remarks }}</div>
+        </div>
+        {% endif %}
+        {% if quotation.internal_notes %}
+        <div class="detail-item">
+            <label>Internal Notes</label>
+            <div class="detail-text" style="background: #fff3cd; padding: var(--spacing-md); border-radius: var(--border-radius);">
+                {{ quotation.internal_notes }}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <div class="section">
+        <h3>👤 Tracking Information</h3>
+        <div class="detail-grid">
+            <div class="detail-item">
+                <label>Assigned To</label>
+                <div>{{ quotation.assigned_to.user.get_full_name|default:quotation.assigned_to.user.username }}</div>
+            </div>
+            <div class="detail-item">
+                <label>Created By</label>
+                <div>{{ quotation.created_by.get_full_name|default:quotation.created_by.username }}</div>
+            </div>
+            <div class="detail-item">
+                <label>Created At</label>
+                <div>{{ quotation.created_at|date:"F d, Y h:i A" }}</div>
+            </div>
+            <div class="detail-item">
+                <label>Last Updated</label>
+                <div>{{ quotation.updated_at|date:"F d, Y h:i A" }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Items Tab -->
+<div id="items" class="tab-content">
+    <div class="section">
+        <h3>📦 Quotation Items</h3>
+        {% if items %}
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Item Code</th>
+                        <th>Description</th>
+                        <th>Quantity</th>
+                        <th>UOM</th>
+                        <th>Unit Price</th>
+                        <th>Disc%</th>
+                        <th>Tax%</th>
+                        <th>Line Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>{{ item.line_number }}</td>
+                        <td>{{ item.item_code|default:"-" }}</td>
+                        <td>{{ item.description }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>{{ item.uom }}</td>
+                        <td>{{ quotation.currency }} {{ item.unit_price|floatformat:2 }}</td>
+                        <td>{{ item.discount_percentage }}%</td>
+                        <td>{{ item.tax_percentage }}%</td>
+                        <td><strong>{{ quotation.currency }} {{ item.line_total|floatformat:2 }}</strong></td>
+                    </tr>
+                    {% if item.remarks %}
+                    <tr>
+                        <td colspan="9" style="background: #f8f9fa; padding-left: 2rem;">
+                            <small><strong>Remarks:</strong> {{ item.remarks }}</small>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p>No items added yet.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Attachments Tab -->
+<div id="attachments" class="tab-content">
+    <div class="section">
+        <h3>📎 Attachments</h3>
+        
+        <!-- Add Attachment Form -->
+        <div style="background: #f8f9fa; padding: var(--spacing-md); border-radius: var(--border-radius); margin-bottom: var(--spacing-lg);">
+            <h4>Upload New Attachment</h4>
+            <form method="post" action="{% url 'newapp:quotation_add_attachment' quotation.pk %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="form-row">
+                    <div class="form-group">
+                        {{ attachment_form.attachment_type }}
+                    </div>
+                    <div class="form-group">
+                        {{ attachment_form.file }}
+                    </div>
+                    <div class="form-group">
+                        {{ attachment_form.description }}
+                    </div>
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary">📎 Upload</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <!-- List Attachments -->
+        {% if attachments %}
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>File Name</th>
+                        <th>Description</th>
+                        <th>Uploaded By</th>
+                        <th>Uploaded At</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for attachment in attachments %}
+                    <tr>
+                        <td><span class="badge badge-info">{{ attachment.get_attachment_type_display }}</span></td>
+                        <td>{{ attachment.file_name }}</td>
+                        <td>{{ attachment.description|default:"-" }}</td>
+                        <td>{{ attachment.uploaded_by.get_full_name|default:attachment.uploaded_by.username }}</td>
+                        <td>{{ attachment.uploaded_at|date:"M d, Y h:i A" }}</td>
+                        <td>
+                            <a href="{{ attachment.file.url }}" target="_blank" class="btn-small btn-info">📥 Download</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p>No attachments uploaded yet.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Activities Tab -->
+<div id="activities" class="tab-content">
+    <div class="section">
+        <h3>💬 Activity Log</h3>
+        
+        <!-- Add Activity Form -->
+        <div style="background: #f8f9fa; padding: var(--spacing-md); border-radius: var(--border-radius); margin-bottom: var(--spacing-lg);">
+            <h4>Add Comment</h4>
+            <form method="post" action="{% url 'newapp:quotation_add_activity' quotation.pk %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    {{ activity_form.activity_type }}
+                </div>
+                <div class="form-group">
+                    {{ activity_form.description }}
+                </div>
+                <div class="form-group">
+                    <label>
+                        {{ activity_form.is_internal }}
+                        Internal Only (not visible to customer)
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-primary">💬 Add Activity</button>
+            </form>
+        </div>
+        
+        <!-- Activity Timeline -->
+        {% if activities %}
+        <div class="activity-timeline">
+            {% for activity in activities %}
+            <div class="activity-item {% if activity.is_internal %}internal{% endif %}">
+                <div class="activity-header">
+                    <span class="badge badge-{% if activity.activity_type == 'COMMENT' %}secondary{% elif activity.activity_type == 'SENT' %}primary{% elif activity.activity_type == 'APPROVED' %}success{% elif activity.activity_type == 'REJECTED' %}danger{% else %}info{% endif %}">
+                        {{ activity.get_activity_type_display }}
+                    </span>
+                    {% if activity.is_internal %}
+                    <span class="badge badge-warning">🔒 Internal</span>
+                    {% endif %}
+                    <span class="activity-user">{{ activity.created_by.get_full_name|default:activity.created_by.username }}</span>
+                    <span class="activity-date">{{ activity.created_at|date:"M d, Y h:i A" }}</span>
+                </div>
+                <div class="activity-body">
+                    {{ activity.description }}
+                    {% if activity.old_value and activity.new_value %}
+                    <div style="margin-top: var(--spacing-sm);">
+                        <span style="color: #dc3545; text-decoration: line-through;">{{ activity.old_value }}</span>
+                        → <span style="color: #28a745; font-weight: 600;">{{ activity.new_value }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p>No activities logged yet.</p>
+        {% endif %}
+    </div>
+</div>
+    </div><!-- End main-content-area -->
+</div><!-- End side-panel-layout -->
+
+<style>
+/* Side Panel Layout */
+.side-panel-layout {
+    display: flex;
+    gap: var(--spacing-lg);
+    align-items: flex-start;
+}
+
+/* Left Side Panel */
+.side-panel {
+    width: 250px;
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    position: sticky;
+    top: 20px;
+    flex-shrink: 0;
+}
+
+.side-panel-header {
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 2px solid var(--border-color);
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+}
+
+.side-panel-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: white;
+    font-weight: 600;
+}
+
+.side-panel-nav {
+    padding: var(--spacing-sm);
+}
+
+.side-panel-button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-xs);
+    background: transparent;
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text-dark);
+    transition: all 0.3s;
+    text-align: left;
+}
+
+.side-panel-button:hover {
+    background: #f8f9fa;
+    transform: translateX(5px);
+}
+
+.side-panel-button.active {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.panel-icon {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.panel-text {
+    flex: 1;
+}
+
+/* Main Content Area */
+.main-content-area {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 968px) {
+    .side-panel-layout {
+        flex-direction: column;
+    }
+    
+    .side-panel {
+        width: 100%;
+        position: relative;
+        top: 0;
+    }
+    
+    .side-panel-nav {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-xs);
+    }
+    
+    .side-panel-button:hover {
+        transform: none;
+    }
+}
+
+@media (max-width: 576px) {
+    .side-panel-nav {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Keep tab-button styles for backward compatibility but hide old tabs */
+.tabs {
+    display: none;
+}
+
+.tab-button {
+    display: none;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--spacing-lg);
+    margin-top: var(--spacing-md);
+}
+
+.detail-item {
+    padding: var(--spacing-md);
+    background: #f8f9fa;
+    border-radius: var(--border-radius);
+}
+
+.detail-item label {
+    display: block;
+    font-weight: 600;
+    color: var(--text-light);
+    font-size: 0.875rem;
+    margin-bottom: var(--spacing-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.detail-item > div {
+    font-size: 1rem;
+    color: var(--text-dark);
+}
+
+.detail-text {
+    white-space: pre-wrap;
+    line-height: 1.6;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--spacing-sm) 0;
+}
+
+.summary-row span:last-child {
+    font-weight: 600;
+}
+
+.activity-timeline {
+    border-left: 3px solid var(--primary-color);
+    padding-left: var(--spacing-lg);
+}
+
+.activity-item {
+    margin-bottom: var(--spacing-lg);
+    position: relative;
+}
+
+.activity-item::before {
+    content: '●';
+    position: absolute;
+    left: -29px;
+    color: var(--primary-color);
+    font-size: 1.5em;
+}
+
+.activity-item.internal {
+    opacity: 0.8;
+}
+
+.activity-header {
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: center;
+    margin-bottom: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+.activity-user {
+    font-weight: 600;
+}
+
+.activity-date {
+    color: var(--text-light);
+    font-size: 0.875rem;
+    margin-left: auto;
+}
+
+.activity-body {
+    background: #f8f9fa;
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius);
+}
+</style>
+
+<script>
+function openTab(evt, tabName) {
+    // Hide all tab contents
+    const tabContents = document.getElementsByClassName('tab-content');
+    for (let i = 0; i < tabContents.length; i++) {
+        tabContents[i].classList.remove('active');
+    }
+    
+    // Remove active class from all side panel buttons
+    const sidePanelButtons = document.getElementsByClassName('side-panel-button');
+    for (let i = 0; i < sidePanelButtons.length; i++) {
+        sidePanelButtons[i].classList.remove('active');
+    }
+    
+    // Show current tab and mark button as active
+    document.getElementById(tabName).classList.add('active');
+    evt.currentTarget.classList.add('active');
+    
+    // Scroll to top of content area for better UX
+    document.querySelector('.main-content-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+</script>
+{% endblock %}

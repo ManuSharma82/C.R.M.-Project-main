@@ -1,0 +1,194 @@
+{% extends 'newapp/base.html' %}
+
+{% block title %}{% if form.instance.pk %}Edit Lead{% else %}Create Lead{% endif %} - CRM{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>{% if form.instance.pk %}✏️ Edit Lead: {{ form.instance.lead_id }}{% else %}➕ Create New Lead{% endif %}</h1>
+    <div class="page-header-actions">
+        <a href="{% url 'newapp:lead_list' %}" class="btn btn-default">← Back to Leads</a>
+    </div>
+</div>
+
+<div class="form-container">
+    <form method="post" enctype="multipart/form-data" class="crm-form">
+        {% csrf_token %}
+        
+        {% if form.errors %}
+        <div class="alert alert-danger">
+            <strong>Please correct the following errors:</strong>
+            <ul>
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <li>{{ field.label }}: {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        
+        <div class="form-section">
+            <h3>📋 Lead Information</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="{{ form.lead_source.id_for_label }}">Lead Source *</label>
+                    {{ form.lead_source }}
+                    <small class="form-hint">Where did this lead come from?</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.prospect.id_for_label }}">Prospect *</label>
+                    {{ form.prospect }}
+                    <small class="form-hint">Select the prospect/customer for this lead</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.originating_visit.id_for_label }}">Originating Visit</label>
+                    {{ form.originating_visit }}
+                    <small class="form-hint">Optional: Link to visit that generated this lead</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-section">
+            <h3>👤 Contact Details</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="{{ form.contact_person.id_for_label }}">Contact Person *</label>
+                    {{ form.contact_person }}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.mobile.id_for_label }}">Mobile *</label>
+                    {{ form.mobile }}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.email.id_for_label }}">Email</label>
+                    {{ form.email }}
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-section">
+            <h3>📝 Requirement Details</h3>
+            <div class="form-group">
+                <label for="{{ form.requirement_description.id_for_label }}">Requirement Description *</label>
+                {{ form.requirement_description }}
+                <small class="form-hint">Describe the customer's requirements in detail</small>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="{{ form.estimated_value.id_for_label }}">Estimated Value (₹)</label>
+                    {{ form.estimated_value }}
+                    <small class="form-hint">Expected deal value</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.priority.id_for_label }}">Priority *</label>
+                    {{ form.priority }}
+                    <small class="form-hint">Lead importance level</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-section">
+            <h3>🎯 Assignment & Status</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="{{ form.assigned_to.id_for_label }}">Assigned To *</label>
+                    {{ form.assigned_to }}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.status.id_for_label }}">Status *</label>
+                    {{ form.status }}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.progress_percentage.id_for_label }}">Progress % *</label>
+                    {{ form.progress_percentage }}
+                    <small class="form-hint">0-100%</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-section">
+            <h3>📅 Timeline</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="{{ form.expected_closure_date.id_for_label }}">Expected Closure Date</label>
+                    {{ form.expected_closure_date }}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.next_action_date.id_for_label }}">Next Action Date</label>
+                    {{ form.next_action_date }}
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.next_action_notes.id_for_label }}">Next Action Notes</label>
+                {{ form.next_action_notes }}
+                <small class="form-hint">What needs to be done next?</small>
+            </div>
+        </div>
+        
+        <div class="form-section">
+            <h3>📌 Additional Information</h3>
+            <div class="form-group">
+                <label for="{{ form.notes.id_for_label }}">Notes</label>
+                {{ form.notes }}
+            </div>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                {% if form.instance.pk %}💾 Update Lead{% else %}➕ Create Lead{% endif %}
+            </button>
+            <a href="{% url 'newapp:lead_list' %}" class="btn btn-default">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<style>
+.form-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.form-section .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.form-hint {
+    display: block;
+    font-size: 0.85em;
+    color: var(--text-light);
+    margin-top: var(--spacing-xs);
+}
+
+.alert {
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    border-radius: var(--radius-md);
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    border: 2px solid #f5c6cb;
+    color: #721c24;
+}
+
+.alert ul {
+    margin: 10px 0 0 0;
+    padding-left: 20px;
+}
+</style>
+{% endblock %}

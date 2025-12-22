@@ -1,0 +1,166 @@
+{% extends 'newapp/base.html' %}
+
+{% block title %}{% if form.instance.pk %}Edit Activity{% else %}Log New Activity{% endif %} - CRM{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>{% if form.instance.pk %}✏️ Edit Activity{% else %}➕ Log New Activity{% endif %}</h1>
+    <div class="page-header-actions">
+        <a href="{% url 'newapp:activity_dashboard' %}" class="btn btn-default">← Back to Dashboard</a>
+    </div>
+</div>
+
+<div class="form-container">
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        {% if form.errors %}
+        <div class="alert alert-danger">
+            <strong>Please correct the following errors:</strong>
+            <ul>
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <li>{{ field.label }}: {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        
+        <div class="form-section">
+            <h2>Activity Information</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.lead.id_for_label }}">Lead *</label>
+                    {{ form.lead }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.activity_type.id_for_label }}">Activity Type *</label>
+                    {{ form.activity_type }}
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.activity_date.id_for_label }}">Activity Date *</label>
+                    {{ form.activity_date }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.activity_time.id_for_label }}">Activity Time *</label>
+                    {{ form.activity_time }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.status.id_for_label }}">Status</label>
+                    {{ form.status }}
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-section">
+            <h2>Discussion Details</h2>
+            <div class="form-group">
+                <label for="{{ form.discussion_summary.id_for_label }}">Discussion Summary *</label>
+                {{ form.discussion_summary }}
+                <small class="form-help">Brief summary of the discussion and key points</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.outcome.id_for_label }}">Outcome</label>
+                {{ form.outcome }}
+                <small class="form-help">What was the outcome of this activity?</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.remarks.id_for_label }}">Additional Remarks</label>
+                {{ form.remarks }}
+            </div>
+        </div>
+        
+        <div class="form-section">
+            <h2>Follow-up Planning</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.next_followup_date.id_for_label }}">Next Follow-up Date</label>
+                    {{ form.next_followup_date }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.next_followup_time.id_for_label }}">Next Follow-up Time</label>
+                    {{ form.next_followup_time }}
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.next_action_required.id_for_label }}">Next Action Required</label>
+                {{ form.next_action_required }}
+                <small class="form-help">What needs to be done in the next follow-up?</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.lead_status_update.id_for_label }}">Update Lead Status</label>
+                {{ form.lead_status_update }}
+                <small class="form-help">Update the lead status if it changed during this activity</small>
+            </div>
+        </div>
+        
+        <div class="form-section">
+            <h2>Contact Information</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.contact_person.id_for_label }}">Contact Person</label>
+                    {{ form.contact_person }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.contact_number.id_for_label }}">Contact Number</label>
+                    {{ form.contact_number }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.contact_email.id_for_label }}">Contact Email</label>
+                    {{ form.contact_email }}
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-section">
+            <h2>Attachments</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.attachment1.id_for_label }}">Attachment 1</label>
+                    {{ form.attachment1 }}
+                    <small class="form-help">Proposal, quote, or document</small>
+                    {% if form.instance.attachment1 %}
+                        <div style="margin-top: 0.5rem;">
+                            <a href="{{ form.instance.attachment1.url }}" target="_blank" class="btn-small btn-info">View Current File</a>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.attachment2.id_for_label }}">Attachment 2</label>
+                    {{ form.attachment2 }}
+                    <small class="form-help">Email copy, screenshot, or additional file</small>
+                    {% if form.instance.attachment2 %}
+                        <div style="margin-top: 0.5rem;">
+                            <a href="{{ form.instance.attachment2.url }}" target="_blank" class="btn-small btn-info">View Current File</a>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.attachment3.id_for_label }}">Attachment 3</label>
+                    {{ form.attachment3 }}
+                    {% if form.instance.attachment3 %}
+                        <div style="margin-top: 0.5rem;">
+                            <a href="{{ form.instance.attachment3.url }}" target="_blank" class="btn-small btn-info">View Current File</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                {% if form.instance.pk %}💾 Update Activity{% else %}➕ Log Activity{% endif %}
+            </button>
+            <a href="{% url 'newapp:activity_dashboard' %}" class="btn btn-default">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

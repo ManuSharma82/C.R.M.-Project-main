@@ -1,0 +1,512 @@
+{% extends 'newapp/base.html' %}
+{% load static %}
+
+{% block title %}Service Call {{ service_call.call_id }} - CRM System{% endblock %}
+
+{% block extra_css %}
+<style>
+.detail-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    border-radius: 10px;
+    margin-bottom: 30px;
+}
+
+.detail-header h1 {
+    margin: 0 0 10px 0;
+    font-size: 2rem;
+}
+
+.detail-header .call-meta {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-top: 15px;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.badge-large {
+    font-size: 1rem;
+    padding: 8px 16px;
+    border-radius: 20px;
+}
+
+.detail-section {
+    background: white;
+    border-radius: 10px;
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.section-title {
+    font-size: 1.3rem;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: #333;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 10px;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.info-label {
+    font-weight: 600;
+    color: #666;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+.info-value {
+    color: #333;
+    font-size: 1.1rem;
+}
+
+.items-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+.items-table th,
+.items-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.items-table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+}
+
+.items-table tr:hover {
+    background: #f8f9fa;
+}
+
+.attachment-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.attachment-item {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    text-align: center;
+    transition: transform 0.2s;
+}
+
+.attachment-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.attachment-icon {
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+
+.attachment-name {
+    font-weight: 600;
+    margin-bottom: 5px;
+    word-break: break-word;
+}
+
+.attachment-meta {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.activity-timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.activity-timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #dee2e6;
+}
+
+.activity-item {
+    position: relative;
+    margin-bottom: 20px;
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-left: 10px;
+}
+
+.activity-item::before {
+    content: '';
+    position: absolute;
+    left: -25px;
+    top: 20px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #007bff;
+    border: 2px solid white;
+}
+
+.activity-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.activity-type {
+    font-weight: 600;
+    color: #007bff;
+}
+
+.activity-time {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.activity-description {
+    color: #333;
+    line-height: 1.5;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.priority-critical { border-left: 4px solid #dc3545; }
+.priority-high { border-left: 4px solid #fd7e14; }
+.priority-medium { border-left: 4px solid #ffc107; }
+.priority-low { border-left: 4px solid #28a745; }
+
+.status-open { background: #28a745; color: white; }
+.status-in-progress { background: #007bff; color: white; }
+.status-pending-parts { background: #ffc107; color: black; }
+.status-completed { background: #6f42c1; color: white; }
+.status-cancelled { background: #dc3545; color: white; }
+
+.empty-section {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+
+.empty-icon {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    opacity: 0.5;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <!-- Header -->
+    <div class="detail-header priority-{{ service_call.priority|lower }}">
+        <div style="display: flex; justify-content: space-between; align-items: start;">
+            <div>
+                <h1>🔧 Service Call {{ service_call.call_id }}</h1>
+                <div class="call-meta">
+                    <div class="meta-item">
+                        <span>📅 Created:</span>
+                        <span>{{ service_call.created_at|date:"M d, Y H:i" }}</span>
+                    </div>
+                    <div class="meta-item">
+                        <span>👤 Customer:</span>
+                        <span>{{ service_call.customer.name }}</span>
+                    </div>
+                    <div class="meta-item">
+                        <span>📞 Contact:</span>
+                        <span>{{ service_call.contact_person }} ({{ service_call.contact_phone }})</span>
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <span class="badge badge-large badge-priority-{{ service_call.priority|lower }}">
+                    {{ service_call.get_priority_display }}
+                </span>
+                <span class="badge badge-large status-{{ service_call.status|lower }}">
+                    {{ service_call.get_status_display }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+        <a href="{% url 'newapp:servicecall_edit' service_call.pk %}" class="btn btn-primary">
+            ✏️ Edit Service Call
+        </a>
+        <a href="{% url 'newapp:servicecall_list' %}" class="btn btn-outline">
+            ← Back to List
+        </a>
+    </div>
+
+    <!-- Basic Information -->
+    <div class="detail-section">
+        <div class="section-title">📋 Basic Information</div>
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">Service Type</div>
+                <div class="info-value">{{ service_call.get_service_type_display }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Priority</div>
+                <div class="info-value">
+                    <span class="badge badge-priority-{{ service_call.priority|lower }}">
+                        {{ service_call.get_priority_display }}
+                    </span>
+                </div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Status</div>
+                <div class="info-value">
+                    <span class="badge status-{{ service_call.status|lower }}">
+                        {{ service_call.get_status_display }}
+                    </span>
+                </div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Customer</div>
+                <div class="info-value">{{ service_call.customer.name }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Contact Person</div>
+                <div class="info-value">{{ service_call.contact_person }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Contact Phone</div>
+                <div class="info-value">{{ service_call.contact_phone }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Service Location</div>
+                <div class="info-value">{{ service_call.location|default:"Not specified" }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Reported By</div>
+                <div class="info-value">
+                    {{ service_call.reported_by.user.get_full_name|default:service_call.reported_by.user.username }}
+                </div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Assigned To</div>
+                <div class="info-value">
+                    {{ service_call.assigned_to.user.get_full_name|default:service_call.assigned_to.user.username }}
+                </div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Scheduled Date</div>
+                <div class="info-value">
+                    {% if service_call.scheduled_date %}
+                        {{ service_call.scheduled_date|date:"M d, Y H:i" }}
+                    {% else %}
+                        Not scheduled
+                    {% endif %}
+                </div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Estimated Duration</div>
+                <div class="info-value">
+                    {% if service_call.estimated_duration %}
+                        {{ service_call.estimated_duration }} hours
+                    {% else %}
+                        Not specified
+                    {% endif %}
+                </div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Warranty Applicable</div>
+                <div class="info-value">
+                    {% if service_call.warranty_applicable %}
+                        ✅ Yes
+                    {% else %}
+                        ❌ No
+                    {% endif %}
+                </div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">AMC Applicable</div>
+                <div class="info-value">
+                    {% if service_call.amc_applicable %}
+                        ✅ Yes
+                    {% else %}
+                        ❌ No
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Problem Details -->
+    <div class="detail-section">
+        <div class="section-title">🔧 Problem Details</div>
+        <div class="info-grid">
+            <div class="info-item" style="grid-column: 1 / -1;">
+                <div class="info-label">Equipment Details</div>
+                <div class="info-value">
+                    {% if service_call.equipment_details %}
+                        {{ service_call.equipment_details|linebreaks }}
+                    {% else %}
+                        Not specified
+                    {% endif %}
+                </div>
+            </div>
+            <div class="info-item" style="grid-column: 1 / -1;">
+                <div class="info-label">Problem Description</div>
+                <div class="info-value">
+                    {{ service_call.problem_description|linebreaks }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Service Items / Parts -->
+    <div class="detail-section">
+        <div class="section-title">🔩 Service Items / Parts</div>
+        {% if items %}
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th>Item Code</th>
+                        <th>Description</th>
+                        <th>Serial No.</th>
+                        <th>Quantity</th>
+                        <th>Unit Price</th>
+                        <th>Total</th>
+                        <th>Type</th>
+                        <th>Warranty</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                        <tr>
+                            <td>{{ item.item_code|default:item.item_master.item_code|default:"-" }}</td>
+                            <td>{{ item.description }}</td>
+                            <td>{{ item.product_serial_no|default:"-" }}</td>
+                            <td>{{ item.quantity }} {{ item.uom }}</td>
+                            <td>₹{{ item.unit_price|default:0 }}</td>
+                            <td>₹{{ item.total_price|default:0 }}</td>
+                            <td>{{ item.get_item_type_display }}</td>
+                            <td>
+                                {% if item.warranty_applicable %}
+                                    ✅ Yes
+                                {% else %}
+                                    ❌ No
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="5">Total</th>
+                        <th>₹{{ items|total_price }}</th>
+                        <th colspan="2"></th>
+                    </tr>
+                </tfoot>
+            </table>
+        {% else %}
+            <div class="empty-section">
+                <div class="empty-icon">🔩</div>
+                <h3>No Items Added</h3>
+                <p>No service items or parts have been added to this call.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Attachments -->
+    <div class="detail-section">
+        <div class="section-title">📎 Attachments</div>
+        {% if attachments %}
+            <div class="attachment-list">
+                {% for attachment in attachments %}
+                    <div class="attachment-item">
+                        <div class="attachment-icon">
+                            {% if attachment.file_type == 'IMAGE' %}🖼️
+                            {% elif attachment.file_type == 'DOCUMENT' %}📄
+                            {% elif attachment.file_type == 'LOG' %}📋
+                            {% elif attachment.file_type == 'REPORT' %}📊
+                            {% else %}📁{% endif %}
+                        </div>
+                        <div class="attachment-name">{{ attachment.file_name }}</div>
+                        <div class="attachment-meta">
+                            {{ attachment.get_file_type_display }} • 
+                            {{ attachment.uploaded_at|date:"M d, Y" }}
+                        </div>
+                        {% if attachment.description %}
+                            <div class="attachment-meta">{{ attachment.description }}</div>
+                        {% endif %}
+                        <a href="{{ attachment.file.url }}" class="btn btn-small btn-outline" style="margin-top: 10px;">
+                            📥 Download
+                        </a>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-section">
+                <div class="empty-icon">📎</div>
+                <h3>No Attachments</h3>
+                <p>No files have been attached to this service call.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Activity Timeline -->
+    <div class="detail-section">
+        <div class="section-title">📝 Activity Timeline</div>
+        {% if activities %}
+            <div class="activity-timeline">
+                {% for activity in activities %}
+                    <div class="activity-item">
+                        <div class="activity-header">
+                            <div class="activity-type">{{ activity.get_activity_type_display }}</div>
+                            <div class="activity-time">
+                                {{ activity.created_at|date:"M d, Y H:i" }}
+                                {% if activity.is_internal %}🔒 Internal{% endif %}
+                            </div>
+                        </div>
+                        <div class="activity-description">{{ activity.description|linebreaks }}</div>
+                        {% if activity.created_by %}
+                            <div style="font-size: 0.8rem; color: #666; margin-top: 8px;">
+                                – {{ activity.created_by.get_full_name|default:activity.created_by.username }}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-section">
+                <div class="empty-icon">📝</div>
+                <h3>No Activities</h3>
+                <p>No activities have been recorded for this service call.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

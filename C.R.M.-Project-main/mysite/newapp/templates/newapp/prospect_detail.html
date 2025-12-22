@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ prospect.name }} - CRM</title>
+    <link rel="stylesheet" href="{% static 'newapp/css/crm.css' %}">
+</head>
+<body>
+    <div class="crm-container">
+        {% include 'newapp/includes/navbar.html' %}
+        
+        <div class="page-header">
+            <h1>👤 {{ prospect.name }}</h1>
+            <div>
+                <a href="{% url 'newapp:prospect_edit' prospect.pk %}" class="btn btn-warning">Edit</a>
+                <a href="{% url 'newapp:prospect_list' %}" class="btn btn-secondary">Back to List</a>
+            </div>
+        </div>
+
+        <div class="detail-container">
+            <div class="detail-card">
+                <h2>Basic Information</h2>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <strong>Company:</strong>
+                        <span>{{ prospect.company_name|default:"—" }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Type:</strong>
+                        <span class="badge badge-{{ prospect.type|lower }}">{{ prospect.get_type_display }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Status:</strong>
+                        <span class="badge badge-status-{{ prospect.status|lower }}">{{ prospect.get_status_display }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Industry:</strong>
+                        <span>{{ prospect.industry|default:"—" }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <h2>Contact Information</h2>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <strong>Phone:</strong>
+                        <span>📞 {{ prospect.phone }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Alternate Phone:</strong>
+                        <span>📞 {{ prospect.alternate_phone|default:"—" }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Email:</strong>
+                        <span>📧 {{ prospect.email|default:"—" }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Assigned To:</strong>
+                        <span>{{ prospect.assigned_to.user.get_full_name|default:prospect.assigned_to.user.username|default:"Unassigned" }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <h2>Address</h2>
+                <div class="detail-grid">
+                    <div class="detail-item full-width">
+                        <strong>Address:</strong>
+                        <span>{{ prospect.address }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <strong>City:</strong>
+                        <span>{{ prospect.city }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <strong>State:</strong>
+                        <span>{{ prospect.state }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Pincode:</strong>
+                        <span>{{ prospect.pincode }}</span>
+                    </div>
+                    {% if prospect.latitude and prospect.longitude %}
+                    <div class="detail-item">
+                        <strong>Coordinates:</strong>
+                        <span>{{ prospect.latitude }}, {{ prospect.longitude }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if prospect.notes %}
+            <div class="detail-card">
+                <h2>Notes</h2>
+                <p>{{ prospect.notes }}</p>
+            </div>
+            {% endif %}
+
+            <div class="detail-card">
+                <div class="card-header-flex">
+                    <h2>📋 Visit History ({{ visits.count }})</h2>
+                    <a href="{% url 'newapp:visit_create' %}?prospect={{ prospect.pk }}" class="btn btn-primary">+ Log New Visit</a>
+                </div>
+                
+                {% if visits %}
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Visit ID</th>
+                                <th>Date & Time</th>
+                                <th>Sales Employee</th>
+                                <th>Agenda</th>
+                                <th>Outcome</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for visit in visits %}
+                            <tr>
+                                <td><strong>{{ visit.visit_id }}</strong></td>
+                                <td>{{ visit.visit_date|date:"M d, Y" }}<br><small>{{ visit.visit_time|time:"H:i" }}</small></td>
+                                <td>{{ visit.sales_employee.user.username }}</td>
+                                <td>{{ visit.meeting_agenda|truncatewords:10 }}</td>
+                                <td>
+                                    {% if visit.outcome_type %}
+                                    <span class="badge badge-outcome-{{ visit.outcome_type|lower }}">{{ visit.get_outcome_type_display }}</span>
+                                    {% else %}
+                                    —
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge badge-{{ visit.approval_status|lower }}">{{ visit.get_approval_status_display }}</span>
+                                </td>
+                                <td class="action-buttons">
+                                    <a href="{% url 'newapp:visit_detail' visit.pk %}" class="btn-small btn-info">View</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p style="text-align: center; padding: 20px; color: #999;">
+                    No visits recorded yet. <a href="{% url 'newapp:visit_create' %}?prospect={{ prospect.pk }}">Log the first visit</a>
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</body>
+</html>

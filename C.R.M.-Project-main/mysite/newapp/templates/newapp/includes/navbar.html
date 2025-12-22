@@ -1,0 +1,15 @@
+<nav class="navbar">
+    <div class="nav-brand">
+        <a href="{% url 'newapp:dashboard' %}">📊 CRM Portal</a>
+    </div>
+    <div class="nav-menu">
+        <a href="{% url 'newapp:dashboard' %}">Dashboard</a>
+        <a href="{% url 'newapp:prospect_list' %}">Prospects</a>
+        <a href="{% url 'newapp:visit_management' %}">Visit Management</a>
+        <a href="{% url 'newapp:visit_report' %}">Reports</a>
+    </div>
+    <div class="nav-user">
+        <span>👤 {{ user.username }}</span>
+        <a href="{% url 'newapp:logout' %}" class="btn-small btn-danger">Logout</a>
+    </div>
+</nav>

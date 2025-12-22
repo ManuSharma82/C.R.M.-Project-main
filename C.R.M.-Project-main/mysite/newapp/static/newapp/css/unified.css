@@ -1,0 +1,750 @@
+/* Unified CRM Design System - Matching Django Admin Style */
+
+:root {
+    /* Django Admin Color Palette */
+    --primary-color: #417690;
+    --primary-dark: #2b4c5e;
+    --primary-light: #5c8ca8;
+    --secondary-color: #f5dd5d;
+    --success-color: #44b78b;
+    --danger-color: #dd4646;
+    --warning-color: #ffc107;
+    --info-color: #5b80b2;
+    
+    /* Neutral Colors */
+    --bg-color: #f5f5f5;
+    --bg-white: #ffffff;
+    --text-dark: #333333;
+    --text-light: #666666;
+    --text-muted: #999999;
+    --border-color: #dddddd;
+    --border-light: #eeeeee;
+    
+    /* Spacing */
+    --spacing-xs: 5px;
+    --spacing-sm: 10px;
+    --spacing-md: 15px;
+    --spacing-lg: 20px;
+    --spacing-xl: 30px;
+    
+    /* Border Radius */
+    --radius-sm: 4px;
+    --radius-md: 5px;
+    --radius-lg: 8px;
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
+    --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.15);
+    --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Roboto", "Lucida Grande", "DejaVu Sans", "Bitstream Vera Sans", Verdana, Arial, sans-serif;
+    background: var(--bg-color);
+    color: var(--text-dark);
+    line-height: 1.6;
+    min-height: 100vh;
+}
+
+/* Main Container */
+.crm-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0;
+}
+
+/* Header (Matching Django Admin) */
+.crm-header {
+    background: var(--primary-color);
+    background: linear-gradient(to right, #417690 0%, #4a84a3 100%);
+    color: white;
+    padding: var(--spacing-sm) 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.header-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 var(--spacing-lg);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-brand {
+    font-size: 1.1em;
+    font-weight: 500;
+}
+
+.header-brand a {
+    color: white;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.header-user {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    font-size: 0.9em;
+}
+
+.header-user a {
+    color: white;
+    text-decoration: none;
+    padding: var(--spacing-xs) var(--spacing-md);
+    border-radius: var(--radius-sm);
+    transition: background 0.2s;
+}
+
+.header-user a:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Navigation (Matching Django Admin Breadcrumbs) */
+.navbar {
+    background: var(--primary-dark);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.nav-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 var(--spacing-lg);
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.nav-menu {
+    display: flex;
+    gap: 0;
+    list-style: none;
+}
+
+.nav-menu a {
+    display: block;
+    padding: var(--spacing-md) var(--spacing-lg);
+    color: rgba(255, 255, 255, 0.9);
+    text-decoration: none;
+    font-size: 0.95em;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+}
+
+.nav-menu a:hover,
+.nav-menu a.active {
+    background: rgba(255, 255, 255, 0.1);
+    border-bottom-color: var(--secondary-color);
+    color: white;
+}
+
+/* Page Content */
+.page-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: var(--spacing-lg);
+}
+
+/* Breadcrumbs (Django Admin Style) */
+.breadcrumbs {
+    background: white;
+    padding: var(--spacing-md) var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-size: 0.9em;
+}
+
+.breadcrumbs a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.breadcrumbs a:hover {
+    text-decoration: underline;
+}
+
+/* Page Header */
+.page-header {
+    background: white;
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.page-header h1 {
+    color: var(--text-dark);
+    font-size: 1.8em;
+    font-weight: 500;
+    margin: 0;
+}
+
+.page-header-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+/* Buttons (Django Admin Style) */
+.btn {
+    display: inline-block;
+    padding: 8px 16px;
+    font-size: 0.9em;
+    font-weight: 500;
+    text-align: center;
+    text-decoration: none;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s;
+    line-height: 1.5;
+}
+
+.btn-small {
+    padding: 5px 12px;
+    font-size: 0.85em;
+}
+
+.btn-primary, .btn-signin {
+    background: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+}
+
+.btn-success {
+    background: var(--success-color);
+    color: white;
+}
+
+.btn-success:hover {
+    background: #3a9d78;
+}
+
+.btn-danger, .btn-logout {
+    background: var(--danger-color);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #c03737;
+}
+
+.btn-warning {
+    background: var(--warning-color);
+    color: #333;
+}
+
+.btn-warning:hover {
+    background: #e0a800;
+}
+
+.btn-info {
+    background: var(--info-color);
+    color: white;
+}
+
+.btn-info:hover {
+    background: #4a6d9a;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+}
+
+.btn-default {
+    background: white;
+    color: var(--text-dark);
+    border: 1px solid var(--border-color);
+}
+
+.btn-default:hover {
+    background: var(--bg-color);
+}
+
+/* Stats Grid (Dashboard Cards) */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+}
+
+.stat-card {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-lg);
+    text-align: center;
+    transition: box-shadow 0.2s;
+}
+
+.stat-card:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.stat-label {
+    color: var(--text-light);
+    font-size: 0.85em;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: var(--spacing-sm);
+}
+
+.stat-number {
+    font-size: 2.2em;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin: var(--spacing-sm) 0;
+}
+
+/* Content Sections */
+.section, .detail-card, .form-container {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+}
+
+.section h2, .detail-card h2 {
+    color: var(--text-dark);
+    font-size: 1.3em;
+    font-weight: 500;
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--border-light);
+}
+
+/* Filter Section */
+.filter-section {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+.filter-form {
+    display: flex;
+    gap: var(--spacing-md);
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+.filter-form .form-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+/* Form Elements */
+.form-group {
+    margin-bottom: var(--spacing-md);
+}
+
+.form-group label {
+    display: block;
+    font-weight: 500;
+    color: var(--text-dark);
+    margin-bottom: var(--spacing-xs);
+    font-size: 0.9em;
+}
+
+.form-input, select.form-input, textarea.form-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-size: 0.95em;
+    font-family: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(65, 118, 144, 0.1);
+}
+
+textarea.form-input {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.form-section {
+    margin-bottom: var(--spacing-xl);
+    padding-bottom: var(--spacing-lg);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.form-section:last-child {
+    border-bottom: none;
+}
+
+.form-section h3 {
+    color: var(--primary-color);
+    font-size: 1.2em;
+    font-weight: 500;
+    margin-bottom: var(--spacing-md);
+}
+
+.form-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-lg);
+}
+
+/* Tables (Django Admin Style) */
+.table-container {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    margin-bottom: var(--spacing-lg);
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table thead {
+    background: var(--bg-color);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.data-table th {
+    padding: var(--spacing-md);
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-dark);
+    font-size: 0.9em;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.data-table td {
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--border-light);
+    font-size: 0.95em;
+}
+
+.data-table tbody tr:hover {
+    background: #f9f9f9;
+}
+
+.action-buttons {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+/* Badges (Django Admin Style) */
+.badge {
+    display: inline-block;
+    padding: 3px 10px;
+    font-size: 0.8em;
+    font-weight: 600;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+/* Status Badges */
+.badge-new, .badge-status-new {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.badge-contacted, .badge-status-contacted {
+    background: #f3e5f5;
+    color: #7b1fa2;
+}
+
+.badge-qualified, .badge-status-qualified {
+    background: #e1f5fe;
+    color: #0277bd;
+}
+
+.badge-proposal, .badge-status-proposal {
+    background: #fff3e0;
+    color: #ef6c00;
+}
+
+.badge-negotiation, .badge-status-negotiation {
+    background: #ffe0b2;
+    color: #e65100;
+}
+
+.badge-won, .badge-status-won {
+    background: #c8e6c9;
+    color: #2e7d32;
+}
+
+.badge-lost, .badge-status-lost {
+    background: #ffcdd2;
+    color: #c62828;
+}
+
+.badge-inactive, .badge-status-inactive {
+    background: #f5f5f5;
+    color: #616161;
+}
+
+.badge-pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.badge-approved {
+    background: #d4edda;
+    color: #155724;
+}
+
+.badge-rejected {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.badge-scheduled, .badge-status-scheduled {
+    background: #fff9c4;
+    color: #f57f17;
+}
+
+.badge-completed, .badge-status-completed {
+    background: #c8e6c9;
+    color: #2e7d32;
+}
+
+.badge-cancelled, .badge-status-cancelled {
+    background: #ffcdd2;
+    color: #c62828;
+}
+
+.badge-prospect {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.badge-customer {
+    background: #e8f5e9;
+    color: #388e3c;
+}
+
+.badge-lead {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.badge-primary {
+    background: var(--primary-color);
+    color: white;
+}
+
+/* Alerts */
+.alert {
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    border-radius: var(--radius-sm);
+    border-left: 4px solid;
+}
+
+.alert-danger {
+    background: #f8d7da;
+    border-color: #dc3545;
+    color: #721c24;
+}
+
+.alert-warning, .warning-message {
+    background: #fff3cd;
+    border-color: #ffc107;
+    color: #856404;
+}
+
+.alert-info {
+    background: #d1ecf1;
+    border-color: #17a2b8;
+    color: #0c5460;
+}
+
+.alert-success {
+    background: #d4edda;
+    border-color: #28a745;
+    color: #155724;
+}
+
+/* Detail Grid */
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.detail-item strong {
+    color: var(--text-light);
+    font-size: 0.85em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.detail-item span {
+    color: var(--text-dark);
+    font-size: 1.05em;
+}
+
+/* Visit/Follow-up Items */
+.visit-item, .followup-item {
+    padding: var(--spacing-md);
+    background: #f9f9f9;
+    border-left: 3px solid var(--primary-color);
+    margin-bottom: var(--spacing-sm);
+    border-radius: var(--radius-sm);
+}
+
+.visit-item:hover, .followup-item:hover {
+    background: #f5f5f5;
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-lg);
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+}
+
+.page-info {
+    color: var(--text-light);
+    font-size: 0.9em;
+}
+
+/* Messages */
+.messages {
+    margin-bottom: var(--spacing-lg);
+}
+
+.message {
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    border-left: 4px solid;
+}
+
+.message.success {
+    background: #d4edda;
+    border-color: #28a745;
+    color: #155724;
+}
+
+.message.error {
+    background: #f8d7da;
+    border-color: #dc3545;
+    color: #721c24;
+}
+
+.message.warning {
+    background: #fff3cd;
+    border-color: #ffc107;
+    color: #856404;
+}
+
+.message.info {
+    background: #d1ecf1;
+    border-color: #17a2b8;
+    color: #0c5460;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .header-content {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+    }
+    
+    .nav-content {
+        flex-direction: column;
+    }
+    
+    .nav-menu {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .nav-menu a {
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        border-left: 3px solid transparent;
+    }
+    
+    .page-header {
+        flex-direction: column;
+        gap: var(--spacing-md);
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .filter-form {
+        flex-direction: column;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .table-container {
+        overflow-x: auto;
+    }
+}
+
+/* Print Styles */
+@media print {
+    body {
+        background: white;
+    }
+    
+    .crm-header, .navbar, .page-header-actions, 
+    .filter-section, .form-actions, .btn {
+        display: none;
+    }
+    
+    .section, .table-container, .detail-card {
+        border: 1px solid #ddd;
+        box-shadow: none;
+        page-break-inside: avoid;
+    }
+}

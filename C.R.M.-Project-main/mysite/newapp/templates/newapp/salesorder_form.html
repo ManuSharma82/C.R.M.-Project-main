@@ -1,0 +1,757 @@
+{% extends 'newapp/base.html' %}
+
+{% block title %}{% if form.instance.pk %}Edit Sales Order{% else %}New Sales Order{% endif %} - CRM{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>{% if form.instance.pk %}✏️ Edit Sales Order - {{ form.instance.order_number }}{% else %}➕ New Sales Order{% endif %}</h1>
+    <div class="page-header-actions">
+        <a href="{% url 'newapp:salesorder_list' %}" class="btn btn-default">← Back to List</a>
+    </div>
+</div>
+
+<div class="form-container">
+    <form method="post" id="salesorder-form">
+        {% csrf_token %}
+        
+        {% if form.errors or item_formset.errors %}
+        <div class="alert alert-danger">
+            <strong>Please correct the following errors:</strong>
+            <ul>
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <li>{{ field.label }}: {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+                {% for formset_error in item_formset.non_form_errors %}
+                    <li>{{ formset_error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        
+        <!-- Quotation Lookup (only for new orders) -->
+        {% if not form.instance.pk %}
+        <div class="form-section" style="background: linear-gradient(135deg, #e3f2fd, #bbdefb); border: 2px solid #2196F3; border-radius: var(--border-radius); padding: var(--spacing-lg);">
+            <h2 style="color: #1565C0; margin-bottom: var(--spacing-md);">🔍 Load from Quotation (Optional)</h2>
+            <p style="color: #0d47a1; margin-bottom: var(--spacing-md);">Enter a quotation number to auto-fill all fields and items from an existing quotation.</p>
+            <div class="form-row">
+                <div class="form-group" style="flex: 2;">
+                    <label for="quotation-lookup" style="font-weight: 600;">Quotation Number</label>
+                    <input type="text" id="quotation-lookup" class="form-input" placeholder="Enter quotation number (e.g., QUO-000001)" style="font-size: 1.1em; padding: var(--spacing-md);">
+                </div>
+                <div class="form-group" style="flex: 1; display: flex; align-items: flex-end;">
+                    <button type="button" id="load-quotation-btn" class="btn btn-primary" style="width: 100%; padding: var(--spacing-md);">
+                        🔄 Load Quotation Data
+                    </button>
+                </div>
+            </div>
+            <div id="quotation-lookup-message" style="margin-top: var(--spacing-sm);"></div>
+        </div>
+        {% endif %}
+        
+        <!-- Header Information -->
+        <div class="form-section">
+            <h2>📋 Header Information</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.prospect.id_for_label }}">Prospect / Customer *</label>
+                    {{ form.prospect }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.contact_person.id_for_label }}">Contact Person *</label>
+                    {{ form.contact_person }}
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.contact_email.id_for_label }}">Contact Email</label>
+                    {{ form.contact_email }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.contact_phone.id_for_label }}">Contact Phone</label>
+                    {{ form.contact_phone }}
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.order_date.id_for_label }}">Order Date *</label>
+                    {{ form.order_date }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.valid_till.id_for_label }}">Valid Till *</label>
+                    {{ form.valid_till }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.assigned_to.id_for_label }}">Salesperson</label>
+                    {{ form.assigned_to }}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Currency & Exchange -->
+        <div class="form-section">
+            <h2>💱 Currency & Exchange Rate</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.currency.id_for_label }}">Currency</label>
+                    {{ form.currency }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.exchange_rate.id_for_label }}">Exchange Rate</label>
+                    {{ form.exchange_rate }}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Reference -->
+        <div class="form-section">
+            <h2>📌 Reference Information</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.reference_lead.id_for_label }}">Reference Lead</label>
+                    {{ form.reference_lead }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.reference_quotation.id_for_label }}">Reference Quotation</label>
+                    {{ form.reference_quotation }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.reference_number.id_for_label }}">External Reference</label>
+                    {{ form.reference_number }}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Items Section -->
+        <div class="form-section">
+            <h2>📦 Order Items</h2>
+            
+            {% if from_quotation and quotation_items %}
+            <!-- Display items from quotation (read-only preview) -->
+            <div class="alert alert-info" style="margin-bottom: var(--spacing-md);">
+                <strong>ℹ️ Items copied from Quotation</strong><br>
+                The following items will be added to the sales order. You can review them below.
+            </div>
+            <div id="items-container">
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 5%;">#</th>
+                            <th style="width: 10%;">Item Code</th>
+                            <th style="width: 25%;">Description</th>
+                            <th style="width: 8%;">Qty</th>
+                            <th style="width: 8%;">UOM</th>
+                            <th style="width: 10%;">Unit Price</th>
+                            <th style="width: 8%;">Disc%</th>
+                            <th style="width: 8%;">Tax%</th>
+                            <th style="width: 10%;">Line Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="items-tbody-preview">
+                        {% for item in quotation_items %}
+                        <tr style="background: #f8f9fa;">
+                            <td>{{ item.line_number }}</td>
+                            <td>{{ item.item_code|default:"-" }}</td>
+                            <td>{{ item.description }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>{{ item.uom }}</td>
+                            <td>{{ item.unit_price }}</td>
+                            <td>{{ item.discount_percentage }}</td>
+                            <td>{{ item.tax_percentage }}</td>
+                            <td><strong>{{ item.line_total|floatformat:2 }}</strong></td>
+                        </tr>
+                        {% if item.remarks %}
+                        <tr style="background: #f8f9fa;">
+                            <td colspan="9" style="padding-left: 2rem;">
+                                <small><strong>Remarks:</strong> {{ item.remarks }}</small>
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <!-- Regular formset for adding/editing items -->
+            {{ item_formset.management_form }}
+            <div id="items-container">
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 5%;">#</th>
+                            <th style="width: 10%;">Item Code</th>
+                            <th style="width: 25%;">Description *</th>
+                            <th style="width: 8%;">Qty *</th>
+                            <th style="width: 8%;">UOM</th>
+                            <th style="width: 10%;">Unit Price *</th>
+                            <th style="width: 8%;">Disc%</th>
+                            <th style="width: 8%;">Tax%</th>
+                            <th style="width: 10%;">Line Total</th>
+                            <th style="width: 8%;">Delete</th>
+                        </tr>
+                    </thead>
+                    <tbody id="items-tbody">
+                        {% for item_form in item_formset %}
+                        <tr class="item-row">
+                            <td class="line-number">{{ forloop.counter }}</td>
+                            <td>
+                                {{ item_form.id }}
+                                {{ item_form.item_code }}
+                            </td>
+                            <td>{{ item_form.description }}</td>
+                            <td>{{ item_form.quantity }}</td>
+                            <td>{{ item_form.uom }}</td>
+                            <td>{{ item_form.unit_price }}</td>
+                            <td>{{ item_form.discount_percentage }}</td>
+                            <td>{{ item_form.tax_percentage }}</td>
+                            <td class="calculated-total">0.00</td>
+                            <td>{{ item_form.DELETE }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <button type="button" id="add-item" class="btn btn-secondary" style="margin-top: var(--spacing-md);">➕ Add Item</button>
+            {% endif %}
+        </div>
+        
+        <!-- Summary Section -->
+        <div class="form-section">
+            <h2>💰 Summary</h2>
+            <div style="max-width: 500px; margin-left: auto;">
+                <div class="summary-row">
+                    <span>Subtotal:</span>
+                    <span id="subtotal-display">0.00</span>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="{{ form.discount_percentage.id_for_label }}">Discount %</label>
+                        {{ form.discount_percentage }}
+                    </div>
+                    <div class="summary-row">
+                        <span>Discount Amount:</span>
+                        <span id="discount-display">0.00</span>
+                    </div>
+                </div>
+                <div class="summary-row">
+                    <span>Tax Amount:</span>
+                    <span id="tax-display">0.00</span>
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.freight_charges.id_for_label }}">Freight Charges</label>
+                    {{ form.freight_charges }}
+                </div>
+                <div class="summary-row" style="font-size: 1.2em; font-weight: bold; border-top: 2px solid var(--border-color); padding-top: var(--spacing-sm);">
+                    <span>Net Amount:</span>
+                    <span id="net-amount-display">0.00</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Terms & Conditions -->
+        <div class="form-section">
+            <h2>📜 Terms & Conditions</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.payment_terms_master.id_for_label }}">Payment Terms (Master) 🔗</label>
+                    {{ form.payment_terms_master }}
+                    <small class="form-help">Select from predefined terms or leave blank for custom</small>
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.delivery_terms_master.id_for_label }}">Delivery Terms (Master) 🔗</label>
+                    {{ form.delivery_terms_master }}
+                    <small class="form-help">Select from predefined terms or leave blank for custom</small>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="{{ form.payment_terms.id_for_label }}">Payment Terms (Detailed)</label>
+                {{ form.payment_terms }}
+                <small class="form-help">Auto-filled from master or enter custom terms</small>
+            </div>
+            <div class="form-group">
+                <label for="{{ form.delivery_terms.id_for_label }}">Delivery Terms (Detailed)</label>
+                {{ form.delivery_terms }}
+                <small class="form-help">Auto-filled from master or enter custom terms</small>
+            </div>
+        </div>
+        
+        <!-- Remarks -->
+        <div class="form-section">
+            <h2>💬 Remarks</h2>
+            <div class="form-group">
+                <label for="{{ form.customer_remarks.id_for_label }}">Customer Remarks</label>
+                {{ form.customer_remarks }}
+                <small class="form-help">Visible to customer</small>
+            </div>
+            <div class="form-group">
+                <label for="{{ form.internal_notes.id_for_label }}">Internal Notes</label>
+                {{ form.internal_notes }}
+                <small class="form-help">Internal only (not visible to customer)</small>
+            </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                {% if form.instance.pk %}💾 Update Order{% else %}💾 Save as Draft{% endif %}
+            </button>
+            <a href="{% url 'newapp:salesorder_list' %}" class="btn btn-default">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<style>
+.alert {
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius);
+    margin-bottom: var(--spacing-md);
+    border-left: 4px solid;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    border-color: #17a2b8;
+    color: #0c5460;
+}
+
+.items-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: var(--spacing-md);
+}
+
+.items-table th,
+.items-table td {
+    padding: var(--spacing-sm);
+    border: 1px solid var(--border-color);
+    vertical-align: top;
+}
+
+.items-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    text-align: left;
+}
+
+.items-table input[type="text"],
+.items-table input[type="number"],
+.items-table textarea,
+.items-table select {
+    width: 100%;
+    padding: 0.375rem;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+}
+
+.items-table textarea {
+    min-height: 50px;
+    resize: vertical;
+}
+
+.line-number {
+    text-align: center;
+    font-weight: 600;
+}
+
+.calculated-total {
+    text-align: right;
+    font-weight: 600;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--spacing-sm) 0;
+}
+
+.summary-row span:last-child {
+    font-weight: 600;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('salesorder-form');
+    const itemsContainer = document.getElementById('items-tbody');
+    const addItemBtn = document.getElementById('add-item');
+    const totalForms = document.querySelector('#id_items-TOTAL_FORMS');
+    
+    // Calculate line totals
+    function calculateLineTotal(row) {
+        const qty = parseFloat(row.querySelector('[name$="-quantity"]').value) || 0;
+        const price = parseFloat(row.querySelector('[name$="-unit_price"]').value) || 0;
+        const discPct = parseFloat(row.querySelector('[name$="-discount_percentage"]').value) || 0;
+        const taxPct = parseFloat(row.querySelector('[name$="-tax_percentage"]').value) || 0;
+        
+        const amount = qty * price;
+        const discount = amount * (discPct / 100);
+        const taxable = amount - discount;
+        const tax = taxable * (taxPct / 100);
+        const total = taxable + tax;
+        
+        row.querySelector('.calculated-total').textContent = total.toFixed(2);
+        return {amount, discount, tax, total};
+    }
+    
+    // Calculate all totals
+    function calculateTotals() {
+        let subtotal = 0;
+        let totalTax = 0;
+        
+        document.querySelectorAll('.item-row').forEach(row => {
+            const deleteCheckbox = row.querySelector('[name$="-DELETE"]');
+            if (!deleteCheckbox || !deleteCheckbox.checked) {
+                const lineTotals = calculateLineTotal(row);
+                subtotal += lineTotals.amount;
+                totalTax += lineTotals.tax;
+            }
+        });
+        
+        const discountPct = parseFloat(document.querySelector('[name="discount_percentage"]').value) || 0;
+        const discountAmount = subtotal * (discountPct / 100);
+        const freight = parseFloat(document.querySelector('[name="freight_charges"]').value) || 0;
+        const netAmount = subtotal - discountAmount + totalTax + freight;
+        
+        document.getElementById('subtotal-display').textContent = subtotal.toFixed(2);
+        document.getElementById('discount-display').textContent = discountAmount.toFixed(2);
+        document.getElementById('tax-display').textContent = totalTax.toFixed(2);
+        document.getElementById('net-amount-display').textContent = netAmount.toFixed(2);
+    }
+    
+    // Add event listeners to item inputs
+    function attachListeners(row) {
+        row.querySelectorAll('input, textarea, select').forEach(input => {
+            input.addEventListener('input', calculateTotals);
+            input.addEventListener('change', calculateTotals);
+        });
+    }
+    
+    // Attach listeners to existing items
+    document.querySelectorAll('.item-row').forEach(attachListeners);
+    
+    // Attach listeners to summary fields
+    document.querySelector('[name="discount_percentage"]').addEventListener('input', calculateTotals);
+    document.querySelector('[name="freight_charges"]').addEventListener('input', calculateTotals);
+    
+    // Add new item row
+    addItemBtn.addEventListener('click', function() {
+        const formIdx = parseInt(totalForms.value);
+        const newRow = itemsContainer.querySelector('.item-row').cloneNode(true);
+        
+        // Update form index
+        newRow.innerHTML = newRow.innerHTML.replace(/items-\d+-/g, `items-${formIdx}-`);
+        newRow.querySelector('.line-number').textContent = formIdx + 1;
+        
+        // Clear values
+        newRow.querySelectorAll('input, textarea, select').forEach(input => {
+            if (input.type === 'checkbox') {
+                input.checked = false;
+            } else if (input.name && input.name.includes('-id')) {
+                input.value = '';
+            } else {
+                input.value = '';
+            }
+        });
+        
+        itemsContainer.appendChild(newRow);
+        attachListeners(newRow);
+        totalForms.value = formIdx + 1;
+        calculateTotals();
+    });
+    
+    // Initial calculation
+    calculateTotals();
+    
+    // Update line numbers on delete
+    form.addEventListener('change', function(e) {
+        if (e.target.name && e.target.name.includes('-DELETE')) {
+            calculateTotals();
+            
+            // Update line numbers
+            let lineNum = 1;
+            document.querySelectorAll('.item-row').forEach(row => {
+                const deleteCheckbox = row.querySelector('[name$="-DELETE"]');
+                if (!deleteCheckbox || !deleteCheckbox.checked) {
+                    row.querySelector('.line-number').textContent = lineNum++;
+                    row.style.opacity = '1';
+                } else {
+                    row.style.opacity = '0.5';
+                }
+            });
+        }
+    });
+    
+    // ==========================
+    // QUOTATION LOOKUP & AUTO-FILL
+    // ==========================
+    const quotationLookupBtn = document.getElementById('load-quotation-btn');
+    const quotationLookupInput = document.getElementById('quotation-lookup');
+    const quotationLookupMessage = document.getElementById('quotation-lookup-message');
+    
+    if (quotationLookupBtn && quotationLookupInput) {
+        // Load quotation data on button click
+        quotationLookupBtn.addEventListener('click', function() {
+            const quoteNumber = quotationLookupInput.value.trim();
+            
+            if (!quoteNumber) {
+                showMessage('Please enter a quotation number', 'error');
+                return;
+            }
+            
+            // Show loading state
+            quotationLookupBtn.disabled = true;
+            quotationLookupBtn.innerHTML = '⏳ Loading...';
+            showMessage('Fetching quotation data...', 'info');
+            
+// Fetch quotation data via AJAX with caching
+            window.crmUtils.cachedFetch(
+                `{% url 'newapp:get_quotation_data' %}?quote_number=${encodeURIComponent(quoteNumber)}`,
+                `quotation:${quoteNumber}`
+            )
+                .then(data => {
+                    if (data.success) {
+                        populateFormFromQuotation(data.quotation, data.items);
+                        showMessage(`✅ Successfully loaded quotation ${data.quotation.quote_number}!`, 'success');
+                        quotationLookupInput.value = '';
+                    } else {
+                        showMessage(data.error || 'Quotation not found', 'error');
+                    }
+                })
+                .catch(error => {
+                    showMessage(error.error || 'Error loading quotation. Please try again.', 'error');
+                })
+                .finally(() => {
+                    quotationLookupBtn.disabled = false;
+                    quotationLookupBtn.innerHTML = '🔄 Load Quotation Data';
+                });
+        });
+        
+        // Allow Enter key to trigger load
+        quotationLookupInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                quotationLookupBtn.click();
+            }
+        });
+    }
+    
+    function showMessage(message, type) {
+        const colors = {
+            success: '#d4edda',
+            error: '#f8d7da',
+            info: '#d1ecf1'
+        };
+        const textColors = {
+            success: '#155724',
+            error: '#721c24',
+            info: '#0c5460'
+        };
+        
+        quotationLookupMessage.innerHTML = `
+            <div style="padding: var(--spacing-sm); background: ${colors[type]}; color: ${textColors[type]}; 
+                        border-radius: var(--border-radius); border-left: 4px solid ${textColors[type]};">
+                ${message}
+            </div>
+        `;
+        
+        // Auto-hide success messages after 5 seconds
+        if (type === 'success') {
+            setTimeout(() => {
+                quotationLookupMessage.innerHTML = '';
+            }, 5000);
+        }
+    }
+    
+    function populateFormFromQuotation(quotation, items) {
+        // Populate all form fields
+        document.querySelector('[name="prospect"]').value = quotation.prospect_id;
+        document.querySelector('[name="contact_person"]').value = quotation.contact_person;
+        document.querySelector('[name="contact_email"]').value = quotation.contact_email;
+        document.querySelector('[name="contact_phone"]').value = quotation.contact_phone;
+        
+        if (quotation.assigned_to_id) {
+            document.querySelector('[name="assigned_to"]').value = quotation.assigned_to_id;
+        }
+        
+        document.querySelector('[name="currency"]').value = quotation.currency;
+        document.querySelector('[name="exchange_rate"]').value = quotation.exchange_rate;
+        document.querySelector('[name="payment_terms"]').value = quotation.payment_terms;
+        document.querySelector('[name="delivery_terms"]').value = quotation.delivery_terms;
+        
+        if (quotation.reference_lead_id) {
+            document.querySelector('[name="reference_lead"]').value = quotation.reference_lead_id;
+        }
+        if (quotation.reference_visit_id) {
+            document.querySelector('[name="reference_visit"]').value = quotation.reference_visit_id;
+        }
+        
+        // Set reference quotation
+        document.querySelector('[name="reference_quotation"]').value = quotation.id;
+        document.querySelector('[name="reference_number"]').value = quotation.reference_number;
+        document.querySelector('[name="customer_remarks"]').value = quotation.customer_remarks;
+        document.querySelector('[name="internal_notes"]').value = quotation.internal_notes;
+        document.querySelector('[name="discount_percentage"]').value = quotation.discount_percentage;
+        document.querySelector('[name="freight_charges"]').value = quotation.freight_charges;
+        
+        // Clear existing items
+        const tbody = document.getElementById('items-tbody');
+        tbody.innerHTML = '';
+        
+        // Add items from quotation
+        items.forEach((item, index) => {
+            const formIdx = index;
+            const row = document.createElement('tr');
+            row.className = 'item-row';
+            row.innerHTML = `
+                <td class="line-number">${item.line_number}</td>
+                <td>
+                    <input type="hidden" name="items-${formIdx}-id" value="">
+                    <input type="text" name="items-${formIdx}-item_code" class="form-input" value="${item.item_code}">
+                </td>
+                <td>
+                    <textarea name="items-${formIdx}-description" class="form-input" rows="2">${item.description}</textarea>
+                </td>
+                <td>
+                    <input type="number" name="items-${formIdx}-quantity" class="form-input" value="${item.quantity}" step="0.01" required>
+                </td>
+                <td>
+                    <input type="text" name="items-${formIdx}-uom" class="form-input" value="${item.uom}">
+                </td>
+                <td>
+                    <input type="number" name="items-${formIdx}-unit_price" class="form-input" value="${item.unit_price}" step="0.01" required>
+                </td>
+                <td>
+                    <input type="number" name="items-${formIdx}-discount_percentage" class="form-input" value="${item.discount_percentage}" step="0.01">
+                </td>
+                <td>
+                    <input type="number" name="items-${formIdx}-tax_percentage" class="form-input" value="${item.tax_percentage}" step="0.01">
+                </td>
+                <td class="calculated-total">${parseFloat(item.line_total).toFixed(2)}</td>
+                <td>
+                    <input type="checkbox" name="items-${formIdx}-DELETE">
+                </td>
+            `;
+            tbody.appendChild(row);
+            attachListeners(row);
+        });
+        
+        // Update form management
+        document.querySelector('#id_items-TOTAL_FORMS').value = items.length;
+        document.querySelector('#id_items-INITIAL_FORMS').value = 0;
+        
+        // Recalculate totals
+        calculateTotals();
+        
+        // Scroll to form
+        document.querySelector('.form-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+});
+
+// ====================================
+// MASTER DATA AUTO-FILL FUNCTIONS
+// ====================================
+
+function loadPaymentTerms(selectElement) {
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    const paymentTermsTextarea = document.querySelector('[name="payment_terms"]');
+    
+    if (selectedOption.value && selectedOption.text !== '---------') {
+        // Extract the description from the option text
+        // Format: "CODE - Name (X days)"
+        const fullText = selectedOption.text;
+        paymentTermsTextarea.value = `Payment Terms: ${fullText}\n\nPayment is due as per the selected terms.`;
+        paymentTermsTextarea.style.background = '#e8f5e9';  // Light green to indicate auto-filled
+    } else {
+        paymentTermsTextarea.value = '';
+        paymentTermsTextarea.style.background = '';
+    }
+}
+
+function loadDeliveryTerms(selectElement) {
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    const deliveryTermsTextarea = document.querySelector('[name="delivery_terms"]');
+    
+    if (selectedOption.value && selectedOption.text !== '---------') {
+        // Extract the description from the option text
+        const fullText = selectedOption.text;
+        deliveryTermsTextarea.value = `Delivery Terms: ${fullText}\n\nGoods will be delivered as per the selected INCO terms.`;
+        deliveryTermsTextarea.style.background = '#e8f5e9';  // Light green to indicate auto-filled
+    } else {
+        deliveryTermsTextarea.value = '';
+        deliveryTermsTextarea.style.background = '';
+    }
+}
+
+// Item Code Lookup - Auto-fill item details when item code is entered
+document.addEventListener('DOMContentLoaded', function() {
+    // Add event listeners to all item code inputs
+    function attachItemCodeLookup(row) {
+        const itemCodeInput = row.querySelector('[name$="-item_code"]');
+        if (itemCodeInput) {
+            itemCodeInput.addEventListener('blur', function() {
+                const itemCode = this.value.trim();
+                if (itemCode) {
+                    fetchItemData(itemCode, row);
+                }
+            });
+        }
+    }
+    
+    // Attach to existing rows
+    document.querySelectorAll('.item-row').forEach(attachItemCodeLookup);
+    
+    // Also attach when new rows are added
+    const addItemBtn = document.getElementById('add-item');
+    if (addItemBtn) {
+        addItemBtn.addEventListener('click', function() {
+            setTimeout(() => {
+                const lastRow = document.querySelector('.item-row:last-child');
+                if (lastRow) {
+                    attachItemCodeLookup(lastRow);
+                }
+            }, 100);
+        });
+    }
+});
+
+function fetchItemData(itemCode, row) {
+    // Use cached data to reduce API calls
+    window.crmUtils.cachedFetch(
+        `{% url 'newapp:get_item_data' %}?item_code=${encodeURIComponent(itemCode)}`,
+        `item:${itemCode}`
+    ).then(data => {
+        if (data && data.success) {
+            const item = data.item;
+            
+            // Fill in the fields
+            const descInput = row.querySelector('[name$="-description"]');
+            const uomInput = row.querySelector('[name$="-uom"]');
+            const priceInput = row.querySelector('[name$="-unit_price"]');
+            const taxInput = row.querySelector('[name$="-tax_percentage"]');
+            
+            if (descInput && !descInput.value) descInput.value = item.description;
+            if (uomInput && !uomInput.value) uomInput.value = item.unit_of_measurement;
+            if (priceInput && !priceInput.value) priceInput.value = item.standard_price;
+            if (taxInput && !taxInput.value) taxInput.value = item.default_tax_percentage;
+            
+            // Highlight the row briefly to show it was auto-filled
+            row.style.background = '#e8f5e9';
+            setTimeout(() => {
+                row.style.background = '';
+            }, 2000);
+            
+            // Recalculate totals
+            if (typeof calculateTotals === 'function') {
+                calculateTotals();
+            }
+        }
+    }).catch(error => {
+        // Silently ignore if item not found - allows manual entry
+        console.log('Item lookup:', error.message);
+    });
+}
+</script>
+{% endblock %}

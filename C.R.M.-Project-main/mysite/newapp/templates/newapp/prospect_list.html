@@ -1,0 +1,99 @@
+{% extends 'newapp/base.html' %}
+{% load static %}
+
+{% block title %}Prospects & Customers - CRM System{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+            <h1>👥 Prospects & Customers</h1>
+            <a href="{% url 'newapp:prospect_create' %}" class="btn btn-primary">+ Add New Prospect</a>
+        </div>
+
+        <!-- Search and Filters -->
+        <div class="filter-section">
+            <form method="get" class="filter-form">
+                <input type="text" name="search" placeholder="Search by name, company, phone..." 
+                       value="{{ request.GET.search }}" class="form-input">
+                
+                <select name="type" class="form-input">
+                    <option value="">All Types</option>
+                    <option value="PROSPECT" {% if request.GET.type == 'PROSPECT' %}selected{% endif %}>Prospect</option>
+                    <option value="CUSTOMER" {% if request.GET.type == 'CUSTOMER' %}selected{% endif %}>Customer</option>
+                    <option value="LEAD" {% if request.GET.type == 'LEAD' %}selected{% endif %}>Lead</option>
+                </select>
+                
+                <select name="status" class="form-input">
+                    <option value="">All Statuses</option>
+                    <option value="NEW" {% if request.GET.status == 'NEW' %}selected{% endif %}>New</option>
+                    <option value="CONTACTED" {% if request.GET.status == 'CONTACTED' %}selected{% endif %}>Contacted</option>
+                    <option value="QUALIFIED" {% if request.GET.status == 'QUALIFIED' %}selected{% endif %}>Qualified</option>
+                    <option value="PROPOSAL" {% if request.GET.status == 'PROPOSAL' %}selected{% endif %}>Proposal</option>
+                    <option value="NEGOTIATION" {% if request.GET.status == 'NEGOTIATION' %}selected{% endif %}>Negotiation</option>
+                    <option value="WON" {% if request.GET.status == 'WON' %}selected{% endif %}>Won</option>
+                    <option value="LOST" {% if request.GET.status == 'LOST' %}selected{% endif %}>Lost</option>
+                </select>
+                
+                <button type="submit" class="btn btn-secondary">Search</button>
+                <a href="{% url 'newapp:prospect_list' %}" class="btn btn-secondary">Clear</a>
+            </form>
+        </div>
+
+        <!-- Prospects Table -->
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Company</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Phone</th>
+                        <th>City</th>
+                        <th>Assigned To</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for prospect in prospects %}
+                    <tr>
+                        <td><strong>{{ prospect.name }}</strong></td>
+                        <td>{{ prospect.company_name|default:"—" }}</td>
+                        <td><span class="badge badge-{{ prospect.type|lower }}">{{ prospect.get_type_display }}</span></td>
+                        <td><span class="badge badge-status-{{ prospect.status|lower }}">{{ prospect.get_status_display }}</span></td>
+                        <td>{{ prospect.phone }}</td>
+                        <td>{{ prospect.city }}</td>
+                        <td>{{ prospect.assigned_to.user.username|default:"Unassigned" }}</td>
+                        <td class="action-buttons">
+                            <a href="{% url 'newapp:prospect_detail' prospect.pk %}" class="btn-small btn-info">View</a>
+                            <a href="{% url 'newapp:prospect_edit' prospect.pk %}" class="btn-small btn-warning">Edit</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 30px;">
+                            No prospects found. <a href="{% url 'newapp:prospect_create' %}">Add your first prospect</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <div class="pagination">
+            {% if page_obj.has_previous %}
+                <a href="?page=1" class="btn-small">First</a>
+                <a href="?page={{ page_obj.previous_page_number }}" class="btn-small">Previous</a>
+            {% endif %}
+            
+            <span class="page-info">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}" class="btn-small">Next</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}" class="btn-small">Last</a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+{% endblock %}
