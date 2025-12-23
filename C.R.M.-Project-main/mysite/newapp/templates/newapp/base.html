@@ -5,161 +5,339 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}CRM System{% endblock %}</title>
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Main CSS -->
     <link rel="stylesheet" href="{% static 'newapp/css/balanced.css' %}?v=3">
-    <!-- JavaScript Utilities -->
-    <script src="{% static 'newapp/js/utils.js' %}?v=20241201-2"></script>
-    <script src="{% static 'newapp/js/dashboard.js' %}?v=20241201-2"></script>
-    <script src="{% static 'newapp/js/forms.js' %}?v=20241201-2"></script>
-    <script src="{% static 'newapp/js/list-optimization.js' %}?v=20241201-2"></script>
+
+    <!-- Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+
+    <!--fevicon icon-->
+    <!-- Favicon -->
+    <!-- Favicon (cache busting) -->
+        <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}?v=1">
+        <link rel="shortcut icon" href="{% static 'images/favicon.png' %}?v=1">
+
+
+
+
+    <!-- JS -->
+    <script src="{% static 'newapp/js/utils.js' %}" defer></script>
+    <script src="{% static 'newapp/js/dashboard.js' %}" defer></script>
+    <script src="{% static 'newapp/js/forms.js' %}" defer></script>
+
     {% block extra_css %}{% endblock %}
+    <style>
+        .crm-body {
+    font-family: 'Inter', sans-serif;
+    background: #f5f7fb;
+}
+
+/* HEADER */
+.pro-header {
+    height: 64px;
+    background: #ffffff;
+    display: flex;
+    align-items: center;          /* 🔥 FIX */
+    justify-content: space-between;
+    padding: 0 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+}
+
+.header-left,
+.header-right {
+    display: flex;
+    align-items: center;          /* 🔥 FIX */
+    gap: 16px;
+}
+
+.icon-btn {
+    display: flex;                /* 🔥 FIX */
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.icon-btn:hover {
+    background: #f1f5f9;
+}
+
+
+/* NOTIFICATION */
+.notification-wrapper {
+    position: relative;
+}
+
+.notif-dot {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 8px;
+    height: 8px;
+    background: #ef4444;
+    border-radius: 50%;
+}
+
+
+/* PROFILE */
+.profile-wrapper { position: relative; }
+.profile-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.avatar-circle {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    color: #fff;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
+.profile-name {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+
+.avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+}
+
+.profile-dropdown {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 10px);
+    background: #ffffff;
+    width: 220px;
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    opacity: 0;
+    transform: translateY(-10px);
+    pointer-events: none;
+    transition: all 0.25s ease;
+    z-index: 1000;
+}
+
+.profile-dropdown.show {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+
+.profile-dropdown a {
+    display: block;
+    padding: 12px 16px;
+    text-decoration: none;
+    color: #333;
+}
+
+.profile-dropdown a:hover {
+    background: #f1f5f9;
+}
+
+/* SIDEBAR */
+.pro-sidebar {
+    width: 230px;
+    background: #0f172a;
+    height: 100vh;
+    position: fixed;
+}
+
+.sidebar-nav a {
+    color: #cbd5f5;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all .3s;
+}
+
+.sidebar-nav a:hover,
+.sidebar-nav a.active {
+    background: #1e293b;
+    color: #fff;
+}
+
+/* ANIMATION */
+.fade-in {
+    animation: fade .4s ease;
+}
+@keyframes fade {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; }
+}
+
+    </style>
 </head>
-<body>
-    <!-- Header -->
-    <header class="crm-header">
+
+<body class="crm-body">
+
+<!-- ================= HEADER ================= -->
+<header class="crm-header pro-header">
     <div class="header-left">
-        <button class="sidebar-toggle" id="sidebarToggle">
-            <span>☰</span>
+        <button id="sidebarToggle" class="icon-btn">
+            <i class="ri-menu-line"></i>
         </button>
-        <div class="header-brand">
-            <a href="{% url 'newapp:dashboard' %}" style="text-decoration: none; color: inherit;">
-                <strong>CRM System</strong>
-            </a>
-        </div>
+        <span class="brand-name">CRM System</span>
     </div>
 
-    <div class="header-user">
-        <span class="user-name">👤 {{ user.get_full_name|default:user.username }}</span>
-        <a href="{% url 'newapp:logout' %}" class="logout-link">Logout</a>
+    <div class="header-right">
+        <!-- Notification -->
+        <div class="notification-wrapper">
+    <button class="icon-btn">
+        <i class="ri-notification-3-line"></i>
+        <span class="notif-dot"></span>
+    </button>
+</div>
+
+
+        <!-- Profile -->
+            <div class="profile-wrapper">
+    <button class="profile-btn" id="profileBtn">
+        <div class="avatar-circle">
+            {{ user.username|first|upper }}
+        </div>
+        <span class="profile-name">
+            {{ user.get_full_name|default:user.username }}
+        </span>
+        <i class="ri-arrow-down-s-line"></i>
+    </button>
+
+    <div class="profile-dropdown" id="profileDropdown">
+        <a href="#"><i class="ri-user-line"></i> My Profile</a>
+        <a href="#"><i class="ri-settings-3-line"></i> Settings</a>
+        <div class="dropdown-divider"></div>
+        <a href="{% url 'newapp:logout' %}" class="logout">
+            <i class="ri-logout-box-r-line"></i> Logout
+        </a>
     </div>
+</div>
 </header>
 
-    <!-- Sidebar Navigation -->
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <h3>📊 Navigation</h3>
-        </div>
-        <nav class="sidebar-nav">
-            <a href="{% url 'newapp:dashboard' %}{% if request.GET.view_as_user %}?view_as_user={{ request.GET.view_as_user }}{% endif %}" {% if request.resolver_match.url_name == 'dashboard' %}class="active"{% endif %}>
-                <span class="nav-icon">📊</span>
-                <span class="nav-text">Dashboard</span>
-            </a>
-            <a href="{% url 'newapp:visit_management' %}{% if request.GET.view_as_user %}?view_as_user={{ request.GET.view_as_user }}{% endif %}" {% if 'visit' in request.resolver_match.url_name and 'report' not in request.resolver_match.url_name %}class="active"{% endif %}>
-                <span class="nav-icon">📅</span>
-                <span class="nav-text">Visit Management</span>
-            </a>
-            <a href="{% url 'newapp:lead_list' %}{% if request.GET.view_as_user %}?view_as_user={{ request.GET.view_as_user }}{% endif %}" {% if 'lead' in request.resolver_match.url_name %}class="active"{% endif %}>
-                <span class="nav-icon">🎯</span>
-                <span class="nav-text">Lead Management</span>
-            </a>
-            <a href="{% url 'newapp:activity_dashboard' %}{% if request.GET.view_as_user %}?view_as_user={{ request.GET.view_as_user }}{% endif %}" {% if 'activity' in request.resolver_match.url_name %}class="active"{% endif %}>
-                <span class="nav-icon">⚡</span>
-                <span class="nav-text">Activity Tracker</span>
-            </a>
-            <a href="{% url 'newapp:quotation_list' %}{% if request.GET.view_as_user %}?view_as_user={{ request.GET.view_as_user %}{% endif %}" {% if 'quotation' in request.resolver_match.url_name %}class="active"{% endif %}>
-                <span class="nav-icon">💰</span>
-                <span class="nav-text">Quotations</span>
-            </a>
-            <a href="{% url 'newapp:salesorder_list' %}{% if request.GET.view_as_user %}?view_as_user={{ request.GET.view_as_user }}{% endif %}" {% if 'salesorder' in request.resolver_match.url_name %}class="active"{% endif %}>
-                <span class="nav-icon">📦</span>
-                <span class="nav-text">Sales Orders</span>
-            </a>
-            <a href="{% url 'newapp:servicecall_list' %}{% if request.GET.view_as_user %}?view_as_user={{ request.GET.view_as_user }}{% endif %}" {% if 'servicecall' in request.resolver_match.url_name %}class="active"{% endif %}>
-                <span class="nav-icon">🔧</span>
-                <span class="nav-text">Service Calls</span>
-            </a>
-            <a href="{% url 'newapp:visit_report' %}{% if request.GET.view_as_user %}?view_as_user={{ request.GET.view_as_user }}{% endif %}" {% if 'report' in request.resolver_match.url_name %}class="active"{% endif %}>
-                <span class="nav-icon">📈</span>
-                <span class="nav-text">Reports</span>
-            </a>
-            {% if user.is_staff %}
-            <div class="sidebar-divider"></div>
-            <a href="/admin/" {% if '/admin/' in request.path %}class="active"{% endif %}>
-                <span class="nav-icon">⚙️</span>
-                <span class="nav-text">Admin Panel</span>
-            </a>
-            {% endif %}
-        </nav>
-    </aside>
+<!-- ================= SIDEBAR ================= -->
+<aside class="sidebar pro-sidebar" id="sidebar">
+    <nav class="sidebar-nav">
+        <a href="{% url 'newapp:dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+            <i class="ri-dashboard-line"></i><span>Dashboard</span>
+        </a>
+        <a href="{% url 'newapp:visit_management' %}">
+            <i class="ri-calendar-check-line"></i><span>Visits</span>
+        </a>
+        <a href="{% url 'newapp:lead_list' %}">
+            <i class="ri-focus-3-line"></i><span>Leads</span>
+        </a>
+        <a href="{% url 'newapp:activity_dashboard' %}">
+            <i class="ri-flashlight-line"></i><span>Activity</span>
+        </a>
+        <a href="{% url 'newapp:quotation_list' %}">
+            <i class="ri-money-dollar-circle-line"></i><span>Quotations</span>
+        </a>
+        <a href="{% url 'newapp:salesorder_list' %}">
+            <i class="ri-file-list-3-line"></i><span>Sales Orders</span>
+        </a>
+        <a href="{% url 'newapp:servicecall_list' %}">
+            <i class="ri-tools-line"></i><span>Service</span>
+        </a>
+        <a href="{% url 'newapp:visit_report' %}">
+            <i class="ri-bar-chart-line"></i><span>Reports</span>
+        </a>
+    </nav>
+</aside>
 
-    <!-- Main Layout Wrapper -->
-    <div class="main-wrapper">
-        <!-- Admin User Selection Panel -->
-        {% if user.is_staff or user.is_superuser %}
-        <div class="admin-user-panel">
-            <div class="admin-user-panel-content">
-                <form method="get" class="admin-user-form">
-                    <label class="admin-user-label">
-                        👥 View User Activity:
-                    </label>
-                    <select name="view_as_user" onchange="this.form.submit()" class="admin-user-select">
-                        <option value="self" {% if not request.GET.view_as_user or request.GET.view_as_user == 'self' %}selected{% endif %}>📊 All Users / My View (Admin)</option>
-                        <option disabled>──────────────────────────────────</option>
-                        {% for emp in all_employees %}
-                            <option value="{{ emp.user.id }}" {% if request.GET.view_as_user == emp.user.id|stringformat:"s" %}selected{% endif %}>
-                                👤 {{ emp.user.get_full_name|default:emp.user.username }} - {{ emp.get_role_display }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                    {% if viewing_as %}
-                    <a href="?view_as_user=self" class="admin-clear-btn">
-                        ✖ Clear Selection
-                    </a>
-                    {% endif %}
-                </form>
-                {% if viewing_as %}
-                <div class="admin-viewing-banner">
-                    👁️ Currently viewing activity for: <strong>{{ viewing_as }}</strong>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-        {% endif %}
+<!-- ================= MAIN ================= -->
+<div class="main-wrapper">
+    <main class="page-content fade-in">
+        {% block content %}{% endblock %}
+    </main>
+</div>
 
-        <!-- Main Content -->
-        <main class="page-content">
-            {% if messages %}
-                <div class="messages">
-                    {% for message in messages %}
-                        <div class="message {{ message.tags }}">{{ message }}</div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-            
-            {% block content %}{% endblock %}
-        </main>
-    </div>
+<!-- ================= JS ================= -->
+<script>
+/* Sidebar Toggle */
+document.getElementById("sidebarToggle").onclick = () => {
+    document.body.classList.toggle("sidebar-collapsed");
+};
 
-    <!-- Sidebar Toggle Script -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const sidebar = document.getElementById('sidebar');
-            const sidebarToggle = document.getElementById('sidebarToggle');
-            const mainWrapper = document.querySelector('.main-wrapper');
-            
-            // Toggle sidebar
-            sidebarToggle.addEventListener('click', function() {
-                sidebar.classList.toggle('collapsed');
-                document.body.classList.toggle('sidebar-collapsed');
-            });
-            
-            // Close sidebar on mobile when clicking outside
-            document.addEventListener('click', function(event) {
-                if (window.innerWidth <= 768) {
-                    if (!sidebar.contains(event.target) && !sidebarToggle.contains(event.target)) {
-                        sidebar.classList.remove('mobile-open');
-                    }
+/* Profile Dropdown */
+const profileBtn = document.getElementById("profileBtn");
+const profileDropdown = document.getElementById("profileDropdown");
+
+profileBtn.onclick = () => {
+    profileDropdown.classList.toggle("show");
+};
+
+document.addEventListener("click", (e) => {
+    if (!profileBtn.contains(e.target)) {
+        profileDropdown.classList.remove("show");
+    }
+});
+
+
+{% block extra_js %}
+
+
+(function () {
+
+    const CHECK_INTERVAL = 10 * 60 * 1000; // check every  10 min
+    let sessionExpired = false;
+
+    async function checkSession() {
+        try {
+            const response = await fetch(window.location.href, {
+                method: "GET",
+                credentials: "same-origin",
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest"
                 }
             });
-            
-            // Mobile toggle
-            if (window.innerWidth <= 768) {
-                sidebarToggle.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    sidebar.classList.toggle('mobile-open');
-                });
+
+            // If Django session expired, it redirects to login page
+            if (response.redirected && response.url.includes("signin")) {
+                handleSessionExpired();
             }
-        });
-    </script>
-    {% block extra_js %}{% endblock %}
+
+        } catch (err) {
+            console.error("Session check failed", err);
+        }
+    }
+
+    function handleSessionExpired() {
+        if (sessionExpired) return;
+        sessionExpired = true;
+
+        alert("Your session has expired due to inactivity. Please login again.");
+
+        window.location.href = "{% url 'newapp:signin' %}";
+    }
+
+    // Start periodic session checking
+    setInterval(checkSession, CHECK_INTERVAL);
+
+})();
+</script>
+{% endblock %}
+
 </body>
 </html>
