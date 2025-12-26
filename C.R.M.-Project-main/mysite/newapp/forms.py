@@ -793,97 +793,134 @@ class SalesOrderActivityForm(forms.ModelForm):
         }
 
 
+# ==========================
 # Service Call Forms
+# ==========================
+
 class ServiceCallForm(forms.ModelForm):
-    """Form for creating and updating service calls"""
-    
+    """
+    Form for creating and updating service calls
+    """
+
+    STATUS_UI_CHOICES = [
+        ('NEW', 'Open'),
+        ('CLOSED', 'Closed'),
+    ]
+
+    status = forms.ChoiceField(
+        choices=STATUS_UI_CHOICES,
+        widget=forms.Select(attrs={'class': 'form-input'})
+    )
+
+    reopen_reason = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-input',
+            'rows': 3,
+            'placeholder': 'Reason for reopening the service call'
+        })
+    )
+
     class Meta:
         model = ServiceCall
         fields = [
-            'service_type', 'priority', 'customer', 'contact_person', 'contact_phone', 'contact_email',
-            'preferred_visit_date', 'assigned_technician', 'assigned_team', 'mode',
-            'fault_category', 'symptom', 'problem_description', 'parts_required', 'warranty_status',
-            'estimated_cost', 'billable'
+            'service_type',
+            'priority',
+            'customer',
+            'contact_person',
+            'contact_phone',
+            'contact_email',
+            'preferred_visit_date',
+            'assigned_technician',
+            'assigned_team',
+            'mode',
+            'fault_category',
+            'symptom',
+            'problem_type',
+            'parts_required',
+            'warranty_status',
+            'estimated_cost',
+            'billable',
+            'status',
+            'item_name',
+            'serial_number',
+            'origin',
+            'call_type',
+            'service_number',            
         ]
+
         widgets = {
             'service_type': forms.Select(attrs={'class': 'form-input'}),
             'priority': forms.Select(attrs={'class': 'form-input'}),
             'customer': forms.Select(attrs={'class': 'form-input'}),
-            'contact_person': forms.TextInput(attrs={
-                'class': 'form-input',
-                'placeholder': 'Contact person name'
-            }),
-            'contact_phone': forms.TextInput(attrs={
-                'class': 'form-input',
-                'placeholder': 'Contact phone number'
-            }),
-            'contact_email': forms.EmailInput(attrs={
-                'class': 'form-input',
-                'placeholder': 'Contact email (optional)'
-            }),
+            'contact_person': forms.TextInput(attrs={'class': 'form-input'}),
+            'contact_phone': forms.TextInput(attrs={'class': 'form-input'}),
+            'contact_email': forms.EmailInput(attrs={'class': 'form-input'}),
             'preferred_visit_date': forms.DateTimeInput(attrs={
                 'class': 'form-input',
                 'type': 'datetime-local'
             }),
             'assigned_technician': forms.Select(attrs={'class': 'form-input'}),
-            'assigned_team': forms.TextInput(attrs={
-                'class': 'form-input',
-                'placeholder': 'Region/Shift/Team'
-            }),
+            'assigned_team': forms.TextInput(attrs={'class': 'form-input'}),
             'mode': forms.Select(attrs={'class': 'form-input'}),
-            'fault_category': forms.TextInput(attrs={
-                'class': 'form-input',
-                'placeholder': 'Fault category'
-            }),
-            'symptom': forms.TextInput(attrs={
-                'class': 'form-input',
-                'placeholder': 'Symptom description'
-            }),
-            'problem_description': forms.Textarea(attrs={
-                'class': 'form-input',
-                'placeholder': 'Detailed problem description',
-                'rows': 4
-            }),
+            'fault_category': forms.TextInput(attrs={'class': 'form-input'}),
+            'symptom': forms.TextInput(attrs={'class': 'form-input'}),
+            'problem_description': forms.Textarea(attrs={'class': 'form-input','rows': 4}),
             'parts_required': forms.CheckboxInput(attrs={'class': 'form-checkbox'}),
             'warranty_status': forms.Select(attrs={'class': 'form-input'}),
-            'estimated_cost': forms.NumberInput(attrs={
-                'class': 'form-input',
-                'placeholder': 'Estimated cost'
-            }),
+            'estimated_cost': forms.NumberInput(attrs={'class': 'form-input'}),
             'billable': forms.CheckboxInput(attrs={'class': 'form-checkbox'}),
+            'item_name': forms.TextInput(attrs={'class': 'form-input','placeholder': 'Equipment / Item name'
+    }),
+            'serial_number': forms.TextInput(attrs={'class': 'form-input','placeholder': 'Serial number'}),
+            'origin': forms.Select(attrs={'class': 'form-input'}),
+            'call_type': forms.Select(attrs={'class': 'form-input'}),
         }
 
+    def clean(self):
+        cleaned_data = super().clean()
+        if self.instance.pk:
+            old_status = ServiceCall.objects.get(pk=self.instance.pk).status
+            new_status = cleaned_data.get('status')
 
+            if old_status == 'CLOSED' and new_status != 'CLOSED':
+                if not cleaned_data.get('reopen_reason'):
+                    raise forms.ValidationError(
+                        "Reopen reason is required when reopening a closed service call."
+                    )
+
+        return cleaned_data
 class ServiceCallItemForm(forms.ModelForm):
     """Form for service call items/parts"""
-    
+
     class Meta:
         model = ServiceCallItem
         fields = [
-            'item_master', 'item_code', 'product_serial_no', 'description', 'fault_found',
-            'quantity', 'uom', 'item_type', 'unit_cost', 'unit_price', 'labour_hours', 'labour_rate',
-            'tax_percentage', 'warranty_covered', 'batch_no', 'serial_number', 'remarks'
+            'item_master',
+            'item_code',
+            'product_serial_no',
+            'description',
+            'fault_found',
+            'quantity',
+            'uom',
+            'item_type',
+            'unit_cost',
+            'unit_price',
+            'labour_hours',
+            'labour_rate',
+            'tax_percentage',
+            'warranty_covered',
+            'batch_no',
+            'serial_number',
+            'remarks'
         ]
+
         widgets = {
             'item_master': forms.Select(attrs={'class': 'form-input'}),
-            'item_code': forms.TextInput(attrs={
-                'class': 'form-input',
-                'placeholder': 'Item code'
-            }),
-            'product_serial_no': forms.TextInput(attrs={
-                'class': 'form-input',
-                'placeholder': 'Product serial number'
-            }),
-            'description': forms.Textarea(attrs={
-                'class': 'form-input',
-                'placeholder': 'Item description',
-                'rows': 2
-            }),
-            'fault_found': forms.Textarea(attrs={
-                'class': 'form-input',
-                'placeholder': 'Fault description',
-                'rows': 2
-            }),
+            'item_code': forms.TextInput(attrs={'class': 'form-input'}),
+            'product_serial_no': forms.TextInput(attrs={'class': 'form-input'}),
+            'description': forms.Textarea(attrs={'class': 'form-input', 'rows': 2}),
+            'fault_found': forms.Textarea(attrs={'class': 'form-input', 'rows': 2}),
             'quantity': forms.NumberInput(attrs={'class': 'form-input'}),
             'uom': forms.TextInput(attrs={'class': 'form-input'}),
             'item_type': forms.Select(attrs={'class': 'form-input'}),
@@ -895,14 +932,8 @@ class ServiceCallItemForm(forms.ModelForm):
             'warranty_covered': forms.CheckboxInput(attrs={'class': 'form-checkbox'}),
             'batch_no': forms.TextInput(attrs={'class': 'form-input'}),
             'serial_number': forms.TextInput(attrs={'class': 'form-input'}),
-            'remarks': forms.Textarea(attrs={
-                'class': 'form-input',
-                'placeholder': 'Additional remarks',
-                'rows': 2
-            }),
-        }
-
-
+            'remarks': forms.Textarea(attrs={'class': 'form-input', 'rows': 2}),
+    }
 class ServiceCallAttachmentForm(forms.ModelForm):
     """Form for service call attachments"""
     

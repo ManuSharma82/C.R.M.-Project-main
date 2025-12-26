@@ -1,276 +1,102 @@
 {% extends 'newapp/base.html' %}
 {% load static %}
 
-{% block title %}Dashboard - CRM System{% endblock %}
+{% block title %}Dashboard{% endblock %}
 
 {% block content %}
+<div class="dash-wrapper" style="max-width: 1200px; margin: 0 auto; padding: 30px;">
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;">
+        <div>
+            <h1 style="font-size: 2.2em; font-weight: 800; color: var(--text-dark); margin: 0;">Dashboard</h1>
+            <p style="color: var(--text-light); margin-top: 5px;">Overview of your performance</p>
+        </div>
+    </div>
+
+    <div class="grid-row">
+        <div class="card-balanced border-blue">
+            <div class="stat-label">Visits Today</div>
+            <div class="stat-val">{{ visits_today|default:"0" }}</div>
+        </div>
+        <div class="card-balanced border-blue">
+            <div class="stat-label">This Month</div>
+            <div class="stat-val">{{ visits_month|default:"0" }}</div>
+        </div>
+        <div class="card-balanced border-green">
+            <div class="stat-label">Total Leads</div>
+            <div class="stat-val">{{ total_leads|default:"0" }}</div>
+        </div>
+        <div class="card-balanced border-orange">
+            <div class="stat-label">Conversion</div>
+            <div class="stat-val">{{ conversion_rate|default:"0" }}%</div>
+        </div>
+    </div>
+
+    <div class="grid-split">
+        
+        <div class="card-balanced">
+            <h3>📉 Lead Pipeline</h3>
+            <div style="margin-top: 20px;">
+                {% for stage in leads_by_stage %}
+                <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                    <div style="width: 100px; font-weight: 600; font-size: 0.9em;">{{ stage.status }}</div>
+                    <div style="flex: 1; background: #f3f4f6; height: 10px; border-radius: 5px; margin: 0 15px; overflow: hidden;">
+                        <div style="height: 100%; width: 50%; background: var(--primary-color);"></div> </div>
+                    <div style="font-weight: 700;">{{ stage.count }}</div>
+                </div>
+                {% empty %}
+                <p style="color: var(--text-light);">No active leads found.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card-balanced">
+            <h3>🔔 Upcoming Tasks</h3>
+            <div style="margin-top: 20px;">
+                {% for task in upcoming_followups %}
+                <div class="task-item">
+                    <div style="background: #eff6ff; color: var(--primary-color); padding: 8px 12px; border-radius: 8px; font-weight: 700; text-align: center;">
+                        {{ task.next_follow_up_date|date:"d" }}<br>
+                        <span style="font-size:0.7em; opacity:0.8;">{{ task.next_follow_up_date|date:"M" }}</span>
+                    </div>
+                    <div>
+                        <div style="font-weight: 600;">{{ task.prospect.name }}</div>
+                        <div style="font-size: 0.85em; color: var(--text-light);">{{ task.prospect.company_name }}</div>
+                    </div>
+                </div>
+                {% empty %}
+                <p style="color: var(--text-light);">No tasks for the next 7 days.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+
+</div>
 
 <style>
-/* ================= DASHBOARD UI ================= */
+    /* LOCAL STYLES FOR DASHBOARD */
+    .grid-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; margin-bottom: 30px; }
+    .grid-split { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
+    @media(max-width: 768px) { .grid-split { grid-template-columns: 1fr; } }
 
-.dashboard-header h1 {
-    font-size: 26px;
-    font-weight: 700;
-}
+    .card-balanced {
+        background: white;
+        padding: 24px;
+        border-radius: var(--radius-xl);
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    }
+    
+    .border-blue { border-top: 5px solid var(--primary-color); }
+    .border-green { border-top: 5px solid var(--accent-color); }
+    .border-orange { border-top: 5px solid #f59e0b; }
 
-.sub-text {
-    color: var(--text-light);
-    font-size: 14px;
-}
+    .stat-label { color: var(--text-light); font-size: 0.9em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-val { font-size: 2.5em; font-weight: 800; color: var(--text-dark); line-height: 1.1; margin-top: 5px; }
 
-/* ===== STAT CARDS ===== */
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 20px;
-    margin-top: 24px;
-}
-
-.stat-card {
-    background: #ffffff;
-    padding: 20px;
-    border-radius: 14px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
-}
-
-.stat-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 30px rgba(0,0,0,0.08);
-}
-
-.stat-label {
-    font-size: 12px;
-    color: var(--text-light);
-    margin-bottom: 6px;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-}
-
-.stat-number {
-    font-size: 30px;
-    font-weight: 700;
-    color: var(--primary-color);
-}
-
-/* ===== SECTIONS ===== */
-.section-card {
-    background: #ffffff;
-    border-radius: 16px;
-    padding: 24px;
-    margin-top: 30px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-}
-
-.section-card h2 {
-    font-size: 18px;
-    font-weight: 600;
-    margin-bottom: 18px;
-}
-
-/* ===== TABLES ===== */
-.table-container {
-    border-radius: 14px;
-    overflow: hidden;
-}
-
-.data-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.data-table thead {
-    background: #f8fafc;
-}
-
-.data-table th {
-    font-size: 13px;
-    font-weight: 600;
-    color: #475569;
-    padding: 14px;
-    text-align: left;
-}
-
-.data-table td {
-    padding: 14px;
-    font-size: 14px;
-    border-top: 1px solid var(--border);
-}
-
-.data-table tr:hover {
-    background: #f9fafb;
-}
-
-/* ===== BADGES ===== */
-.badge {
-    padding: 6px 12px;
-    font-size: 12px;
-    border-radius: 999px;
-    font-weight: 600;
-}
-
-.badge-success { background: #dcfce7; color: #166534; }
-.badge-warning { background: #fef3c7; color: #92400e; }
-.badge-info { background: #e0f2fe; color: #075985; }
+    h3 { margin: 0; font-size: 1.2em; font-weight: 700; color: var(--text-dark); }
+    
+    .task-item { display: flex; gap: 15px; align-items: center; padding: 12px 0; border-bottom: 1px solid #f3f4f6; }
+    .task-item:last-child { border-bottom: none; }
 </style>
-
-<!-- ================= HEADER ================= -->
-<div class="page-header dashboard-header">
-    <div>
-        <h1>Dashboard</h1>
-        <p class="sub-text">
-            {% if is_admin %}Administrative Overview{% else %}Sales Performance Overview{% endif %}
-        </p>
-    </div>
-</div>
-
-{% if is_sales_employee %}
-
-<!-- ================= ADMIN DASHBOARD ================= -->
-{% if is_admin %}
-
-<div class="stats-grid">
-    <div class="stat-card">
-        <div class="stat-label">Visits Today</div>
-        <div class="stat-number">{{ visits_today }}</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-label">Visits This Month</div>
-        <div class="stat-number">{{ visits_month }}</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-label">Total Leads</div>
-        <div class="stat-number">{{ total_leads }}</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-label">Conversion Rate</div>
-        <div class="stat-number">{{ conversion_rate }}%</div>
-        <small style="color: var(--text-light);">{{ converted_count }} Converted</small>
-    </div>
-</div>
-
-<div class="section-card">
-    <h2>Leads by Stage</h2>
-    <div class="stats-grid">
-        {% for stage in leads_by_stage %}
-        <div class="stat-card" style="text-align:center;">
-            <div class="stat-label">{{ stage.status }}</div>
-            <div class="stat-number">{{ stage.count }}</div>
-        </div>
-        {% empty %}
-        <p>No leads data available</p>
-        {% endfor %}
-    </div>
-</div>
-
-<div class="section-card">
-    <h2>Employee Performance (Top 10)</h2>
-    <div class="table-container">
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Employee</th>
-                    <th>Role</th>
-                    <th>Total Visits</th>
-                    <th>Completed</th>
-                    <th>Pending</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for emp in employee_performance %}
-                <tr>
-                    <td><strong>{{ emp.user.get_full_name|default:emp.user.username }}</strong></td>
-                    <td><span class="badge badge-info">{{ emp.get_role_display }}</span></td>
-                    <td>{{ emp.visit_count }}</td>
-                    <td><span class="badge badge-success">{{ emp.completed_visits }}</span></td>
-                    <td><span class="badge badge-warning">{{ emp.pending_visits }}</span></td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="5" style="text-align:center;">No employee data</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-
-{% else %}
-
-<!-- ================= SALES REP DASHBOARD ================= -->
-<div class="stats-grid">
-    <div class="stat-card">
-        <div class="stat-label">Today's Visits</div>
-        <div class="stat-number">{{ visits_today }}</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-label">Monthly Visits</div>
-        <div class="stat-number">{{ visits_month }}</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-label">Active Leads</div>
-        <div class="stat-number">{{ active_leads }}</div>
-        <small style="color: var(--text-light);">of {{ total_leads }}</small>
-    </div>
-    <div class="stat-card">
-        <div class="stat-label">Conversion Rate</div>
-        <div class="stat-number">{{ conversion_rate }}%</div>
-    </div>
-</div>
-
-<div class="section-card">
-    <h2>My Leads by Stage</h2>
-    <div class="stats-grid">
-        {% for stage in leads_by_stage %}
-        <div class="stat-card" style="text-align:center;">
-            <div class="stat-label">{{ stage.status }}</div>
-            <div class="stat-number">{{ stage.count }}</div>
-        </div>
-        {% endfor %}
-    </div>
-</div>
-
-{% endif %}
-
-<!-- ================= FOLLOW UPS ================= -->
-<div class="section-card">
-    <h2>Upcoming Follow-ups (Next 7 Days)</h2>
-    <div class="table-container">
-        <table class="data-table">
-            <thead>
-                <tr>
-                    {% if is_admin %}<th>Sales Rep</th>{% endif %}
-                    <th>Prospect</th>
-                    <th>Company</th>
-                    <th>Follow-up Date</th>
-                    <th>Last Visit</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for visit in upcoming_followups %}
-                <tr>
-                    {% if is_admin %}
-                    <td>{{ visit.sales_employee.user.get_full_name }}</td>
-                    {% endif %}
-                    <td>{{ visit.prospect.name }}</td>
-                    <td>{{ visit.prospect.company_name|default:"Individual" }}</td>
-                    <td><span class="badge badge-warning">{{ visit.next_follow_up_date }}</span></td>
-                    <td>{{ visit.visit_date }}</td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="5" style="text-align:center;">No follow-ups</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-
-{% endif %}
-
-<script>
-window.dashboardData = JSON.parse('{{ dashboard_json|safe }}');
-</script>
-
 {% endblock %}

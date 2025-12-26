@@ -27,3 +27,14 @@ urlpatterns = [
 # Serve media files during development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+
+from django.views.generic import RedirectView
+from django.templatetags.static import static
+
+urlpatterns += [
+    path(
+        "favicon.ico",
+        RedirectView.as_view(url=static("favicon.ico")),
+    ),
+]

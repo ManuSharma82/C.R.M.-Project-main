@@ -12,7 +12,7 @@ class Department(models.Model):
     code = models.CharField(max_length=10, unique=True)
     description = models.TextField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True,editable=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
@@ -32,7 +32,7 @@ class Designation(models.Model):
     level = models.IntegerField(default=1, help_text="Hierarchy level (1=Top, higher=Lower)")
     description = models.TextField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True,editable=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
@@ -60,7 +60,7 @@ class Territory(models.Model):
     parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='sub_territories')
     description = models.TextField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True,editable=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
@@ -78,7 +78,7 @@ class UserProfile(models.Model):
     phone_number = models.CharField(max_length=15, blank=True, null=True)
     date_of_birth = models.DateField(blank=True, null=True)
     profile_picture = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True,editable=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
@@ -132,7 +132,7 @@ class SalesEmployee(models.Model):
     mobile = models.CharField(max_length=15)
     is_active = models.BooleanField(default=True)
     joined_date = models.DateField(default=timezone.now)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True,editable=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
@@ -144,14 +144,18 @@ class SalesEmployee(models.Model):
         ordering = ['-created_at']
 
 
+from django.db import models
+from django.contrib.auth.models import User
+
 class ProspectCustomer(models.Model):
     """Prospect/Customer master for CRM"""
+
     TYPE_CHOICES = [
         ('PROSPECT', 'Prospect'),
         ('CUSTOMER', 'Customer'),
         ('LEAD', 'Lead'),
     ]
-    
+
     STATUS_CHOICES = [
         ('NEW', 'New'),
         ('CONTACTED', 'Contacted'),
@@ -162,36 +166,60 @@ class ProspectCustomer(models.Model):
         ('LOST', 'Lost'),
         ('INACTIVE', 'Inactive'),
     ]
-    
-    # Unique customer identifier (null=True for migration compatibility)
-    customer_id = models.CharField(max_length=50, unique=True, editable=False, db_index=True, null=True, blank=True)
-    
-    # Customer details - name must be unique
-    name = models.CharField(max_length=200, unique=True, help_text="Unique customer name")
+
+    customer_id = models.CharField(
+        max_length=50,
+        unique=True,
+        editable=False,
+        db_index=True,
+        null=True,
+        blank=True
+    )
+
+    name = models.CharField(max_length=200, unique=True)
     company_name = models.CharField(max_length=200, blank=True, null=True)
     type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='PROSPECT')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='NEW')
+
     email = models.EmailField(blank=True, null=True)
     phone = models.CharField(max_length=15)
     alternate_phone = models.CharField(max_length=15, blank=True, null=True)
+
     address = models.TextField()
     city = models.CharField(max_length=100)
     state = models.CharField(max_length=100)
     pincode = models.CharField(max_length=10)
+
     latitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
+
     industry = models.CharField(max_length=100, blank=True, null=True)
-    assigned_to = models.ForeignKey(SalesEmployee, on_delete=models.SET_NULL, null=True, related_name='prospects')
+
+    assigned_to = models.ForeignKey(
+        SalesEmployee,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='prospects'
+    )
+
     notes = models.TextField(blank=True, null=True)
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_prospects')
+
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='created_prospects'
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+    closed_at = models.DateTimeField(blank=True, null=True)
+
     def save(self, *args, **kwargs):
         """Auto-generate customer ID if not exists"""
         if not self.customer_id:
-            # Generate unique customer ID
             last_customer = ProspectCustomer.objects.order_by('-id').first()
+
             if last_customer and last_customer.customer_id:
                 try:
                     last_id = int(last_customer.customer_id.split('-')[-1])
@@ -200,16 +228,16 @@ class ProspectCustomer(models.Model):
                     self.customer_id = "CUST-00001"
             else:
                 self.customer_id = "CUST-00001"
+
         super().save(*args, **kwargs)
-    
+
     def __str__(self):
         return f"{self.customer_id} - {self.name} ({self.company_name or 'Individual'})"
-    
+
     class Meta:
         verbose_name = "Prospect/Customer"
         verbose_name_plural = "Prospects/Customers"
         ordering = ['-created_at']
-
 
 class Lead(models.Model):
     """Lead management model for tracking business opportunities"""
@@ -263,7 +291,7 @@ class Lead(models.Model):
     lost_reason = models.TextField(blank=True, null=True, help_text="Reason if status is Lost")
     
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_leads')
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True,editable=True )
     updated_at = models.DateTimeField(auto_now=True)
     
     def save(self, *args, **kwargs):
@@ -362,7 +390,7 @@ class LeadActivity(models.Model):
     
     # Tracking
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_activities')
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True,editable=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     def save(self, *args, **kwargs):
@@ -449,7 +477,7 @@ class VisitLog(models.Model):
     photo = models.ImageField(upload_to='visit_attachments/photos/', blank=True, null=True)
     document = models.FileField(upload_to='visit_attachments/documents/', blank=True, null=True)
     
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True,editable=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     def save(self, *args, **kwargs):
@@ -561,7 +589,7 @@ class Quotation(models.Model):
     
     # Tracking
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_quotations')
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True,editable=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     def save(self, *args, **kwargs):
@@ -713,7 +741,7 @@ class QuotationActivity(models.Model):
     is_internal = models.BooleanField(default=True, help_text="Internal activity (not visible to customer)")
     
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True,editable=True)
     
     def __str__(self):
         return f"{self.quotation.quote_number} - {self.get_activity_type_display()}"
@@ -811,7 +839,7 @@ class SalesOrder(models.Model):
     
     # Tracking
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_orders')
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True,editable=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     def save(self, *args, **kwargs):
@@ -963,7 +991,7 @@ class SalesOrderActivity(models.Model):
     is_internal = models.BooleanField(default=True, help_text="Internal activity (not visible to customer)")
     
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True,editable=True)
     
     def __str__(self):
         return f"{self.order.order_number} - {self.get_activity_type_display()}"
@@ -1012,7 +1040,7 @@ class ItemMaster(models.Model):
     
     # Tracking
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_items')
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True,editable=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
@@ -1043,7 +1071,7 @@ class TaxMaster(models.Model):
     description = models.TextField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
     
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True,editable=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
@@ -1063,7 +1091,7 @@ class PaymentTermsMaster(models.Model):
     description = models.TextField()
     is_active = models.BooleanField(default=True)
     
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True,editable=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
@@ -1097,7 +1125,7 @@ class DeliveryTermsMaster(models.Model):
     description = models.TextField()
     is_active = models.BooleanField(default=True)
     
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True,editable=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
@@ -1116,7 +1144,7 @@ class VisitPurposeMaster(models.Model):
     description = models.TextField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
     
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True,editable=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
@@ -1145,7 +1173,7 @@ class ApprovalMatrix(models.Model):
     remarks = models.TextField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
     
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True,editable=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
@@ -1216,7 +1244,7 @@ class Technician(models.Model):
     notes = models.TextField(blank=True, null=True, help_text="Additional notes or remarks")
     
     # Timestamps
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True,editable=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     def save(self, *args, **kwargs):
@@ -1290,7 +1318,7 @@ class ServiceContract(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='ACTIVE')
     
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_contracts')
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True,editable=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     def save(self, *args, **kwargs):
@@ -1344,10 +1372,10 @@ class WarrantyRecord(models.Model):
     coverage_details = models.TextField(blank=True, null=True)
     terms_conditions = models.TextField(blank=True, null=True)
     
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='ACTIVE')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='NEW')
     
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True, editable=True)
+    updated_at = models.DateTimeField(null=True, blank=True, )
     
     def __str__(self):
         return f"{self.warranty_number} - {self.product_description[:50]}"
@@ -1379,15 +1407,8 @@ class ServiceCall(models.Model):
     ]
     
     STATUS_CHOICES = [
-        ('NEW', 'New'),
-        ('ASSIGNED', 'Assigned'),
-        ('SCHEDULED', 'Scheduled'),
-        ('IN_PROGRESS', 'In Progress'),
-        ('ON_HOLD', 'On Hold'),
-        ('COMPLETED', 'Completed'),
+        ('OPEN', 'Open'),
         ('CLOSED', 'Closed'),
-        ('REJECTED', 'Rejected'),
-        ('CANCELLED', 'Cancelled'),
     ]
     
     MODE_CHOICES = [
@@ -1413,9 +1434,86 @@ class ServiceCall(models.Model):
         ('CUSTOMER_DECLINED', 'Customer Declined'),
         ('NOT_RESOLVED', 'Not Resolved'),
     ]
+
+    ORIGIN_CHOICES = [
+        ('PHONE', 'Phone'),
+        ('EMAIL', 'Email'),
+        ('WHATSAPP', 'WhatsApp'),
+        ('PORTAL', 'Customer Portal'),
+        ('VISIT', 'Site Visit'),
+    ]
+
+    CALL_TYPE_CHOICES = [
+        ('BREAKDOWN', 'Breakdown'),
+        ('SERVICE', 'Service'),
+        ('INSTALLATION', 'Installation'),
+    ]
+    CALL_TYPE_CHOICES = [
+    ('BREAKDOWN', 'Breakdown'),
+    ('SERVICE', 'Service'),
+    ('INSTALLATION', 'Installation'),
+]
+
+    call_type = models.CharField(
+    max_length=20,
+    choices=CALL_TYPE_CHOICES,
+    default='SERVICE'   # ✅ IMPORTANT
+    )
+
+
+    PROBLEM_TYPE_CHOICES = [
+        ('MECHANICAL', 'Mechanical'),
+        ('ELECTRICAL', 'Electrical'),
+        ('SOFTWARE', 'Software'),
+        ('OTHER', 'Other'),
+    ]
+
+    origin = models.CharField(
+        max_length=20,
+        choices=ORIGIN_CHOICES,
+        default='PHONE'
+    )
+
+    problem_type = models.CharField(
+        max_length=20,
+        choices=PROBLEM_TYPE_CHOICES,
+        default='OTHER'
+    )
+
+
+
+    assigned_technician = models.ForeignKey(
+        Technician,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='assigned_calls'
+    )
+
     
     # Service Call Identification
-    service_number = models.CharField(max_length=50, unique=True, editable=False)
+    service_number = models.CharField(max_length=50, unique=True, editable=True)
+    
+    item_name = models.CharField(
+    max_length=20,
+    blank=True,
+    null=True,
+    help_text="Equipment / Item name"
+    )
+
+    serial_number = models.CharField(
+    max_length=200,
+    blank=True,
+    null=True,
+    help_text="Equipment serial number"
+    )
+
+    # status
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='NEW'
+    )
     
     # Related Documents
     related_order = models.ForeignKey(SalesOrder, on_delete=models.SET_NULL, null=True, blank=True,
@@ -1425,8 +1523,8 @@ class ServiceCall(models.Model):
     
     # Customer Information
     customer = models.ForeignKey(ProspectCustomer, on_delete=models.CASCADE, related_name='service_calls')
-    contact_person = models.CharField(max_length=200)
-    contact_phone = models.CharField(max_length=15)
+    contact_person = models.CharField(max_length=100)
+    contact_phone = models.CharField(max_length=10)
     contact_email = models.EmailField(blank=True, null=True)
     
     # Service Request Details
@@ -1434,15 +1532,13 @@ class ServiceCall(models.Model):
     preferred_visit_date = models.DateTimeField(null=True, blank=True)
     
     # Assignment
-    assigned_technician = models.ForeignKey(Technician, on_delete=models.SET_NULL, null=True, blank=True,
-                                           related_name='assigned_calls')
-    assigned_team = models.CharField(max_length=100, blank=True, null=True,
-                                    help_text="Region/Shift/Team")
+    assigned_technician = models.ForeignKey(Technician, on_delete=models.SET_NULL, null=True, blank=True,related_name='assigned_calls')
+    assigned_team = models.CharField(max_length=100, blank=True, null=True,help_text="Region/Shift/Team")
     
     # Service Details
     service_type = models.CharField(max_length=20, choices=SERVICE_TYPE_CHOICES)
     priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='MEDIUM')
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='NEW')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='OPEN')
     mode = models.CharField(max_length=20, choices=MODE_CHOICES, default='ONSITE')
     
     # Problem Details
@@ -1461,10 +1557,8 @@ class ServiceCall(models.Model):
     # Parts & Warranty
     parts_required = models.BooleanField(default=False)
     warranty_status = models.CharField(max_length=20, choices=WARRANTY_STATUS_CHOICES, default='PAID')
-    warranty_record = models.ForeignKey(WarrantyRecord, on_delete=models.SET_NULL, null=True, blank=True,
-                                       related_name='service_calls')
-    service_contract = models.ForeignKey(ServiceContract, on_delete=models.SET_NULL, null=True, blank=True,
-                                        related_name='service_calls')
+    warranty_record = models.ForeignKey(WarrantyRecord, on_delete=models.SET_NULL, null=True, blank=True,related_name='service_calls')
+    service_contract = models.ForeignKey(ServiceContract, on_delete=models.SET_NULL, null=True, blank=True,related_name='service_calls')
     
     # Resolution
     resolution_code = models.CharField(max_length=30, choices=RESOLUTION_CODE_CHOICES, blank=True, null=True)
@@ -1501,37 +1595,32 @@ class ServiceCall(models.Model):
     
     # Audit Fields
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_service_calls')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
-                                  related_name='updated_service_calls')
+    created_at = models.DateTimeField(auto_now_add=True, editable=True)
+    closed_at = models.DateTimeField(blank=True, null=True, editable=True)
+
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,related_name='updated_service_calls')
     updated_at = models.DateTimeField(auto_now=True)
     
-    def save(self, *args, **kwargs):
-        if not self.service_number:
-            # Auto-generate service number: SVC-YYYY-0001
-            year = timezone.now().year
-            last_call = ServiceCall.objects.filter(
-                service_number__startswith=f'SVC-{year}'
-            ).order_by('-id').first()
-            
-            if last_call and last_call.service_number:
-                last_num = int(last_call.service_number.split('-')[-1])
-                new_num = last_num + 1
-            else:
-                new_num = 1
-            
-            self.service_number = f"SVC-{year}-{new_num:04d}"
-        super().save(*args, **kwargs)
-    
-    def __str__(self):
-        return f"{self.service_number} - {self.customer.name} - {self.service_type}"
-    
-    class Meta:
-        verbose_name = "Service Call"
-        verbose_name_plural = "Service Calls"
-        ordering = ['-service_request_date']
+def save(self, *args, **kwargs):
+    # 1️⃣ Auto-generate service number
+    if not self.service_number:
+        year = timezone.now().year
+        last_call = ServiceCall.objects.filter(
+            service_number__startswith=f"SVC-{year}"
+        ).order_by('-id').first()
 
+        last_num = int(last_call.service_number.split('-')[-1]) if last_call else 0
+        self.service_number = f"SVC-{year}-{last_num + 1:04d}"
 
+    # 2️⃣ Auto set closed_at when status is CLOSED
+    if self.status == 'CLOSED':
+        if self.closed_at is None:
+            self.closed_at = timezone.now()
+    else:
+        # Clear closed_at if reopened
+        self.closed_at = None
+
+    super().save(*args, **kwargs)
 class ServiceCallItem(models.Model):
     """Line items for parts/products used in service call"""
     service_call = models.ForeignKey(ServiceCall, on_delete=models.CASCADE, related_name='items')
@@ -1634,7 +1723,7 @@ class ServiceActivity(models.Model):
     remarks = models.TextField(blank=True, null=True)
     is_billable = models.BooleanField(default=True)
     
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True,editable=True)
     
     def __str__(self):
         return f"{self.service_call.service_number} - {self.activity_type} - {self.activity_date}"
@@ -1699,7 +1788,7 @@ class SpareUsage(models.Model):
                                    related_name='verified_spare_usage', help_text="Inventory manager verification")
     verified_at = models.DateTimeField(null=True, blank=True)
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True,editable=True)
 
     def __str__(self):
         return f"{self.service_call.service_number} - {self.part.item_code} - Qty: {self.qty_used}"
@@ -1757,7 +1846,7 @@ class ServiceInvoice(models.Model):
     # Audit and additional info
     notes = models.TextField(blank=True, null=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_invoices')
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True,editable=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def save(self, *args, **kwargs):
@@ -1799,7 +1888,7 @@ class FaultCategory(models.Model):
                                     help_text="Comma-separated applicable service types")
     is_active = models.BooleanField(default=True)
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True,editable=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
@@ -1819,7 +1908,7 @@ class SymptomMaster(models.Model):
     fault_categories = models.ManyToManyField(FaultCategory, blank=True, related_name='symptoms')
     is_active = models.BooleanField(default=True)
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True,editable=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
@@ -1862,7 +1951,7 @@ class SLAConfig(models.Model):
                                                          help_text="Percentage of SLA time for escalation warning")
 
     is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True,editable=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):

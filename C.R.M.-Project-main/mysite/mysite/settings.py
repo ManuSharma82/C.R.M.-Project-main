@@ -95,7 +95,7 @@ WSGI_APPLICATION = 'mysite.wsgi.application'
 }"""
 
  #MS SQL Server Configuration (keep for production / MS SQL use):
-DATABASES = {
+"""DATABASES = {
      'default': {
          'ENGINE': 'mssql',
          'NAME': 'CRM',  # Your database name
@@ -108,7 +108,38 @@ DATABASES = {
              'extra_params': 'Trusted_Connection=yes;TrustServerCertificate=yes;',
          },
      }
+}"""
+import os
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'mssql',
+
+        # SAME DB name as database.py
+        'NAME': os.environ.get('MSSQL_DB', 'crm_database'),
+
+        # Use SQL auth only if provided
+        'USER': os.environ.get('MSSQL_USER', ''),
+        'PASSWORD': os.environ.get('MSSQL_PASSWORD', ''),
+
+        # SAME server as database.py
+        'HOST': os.environ.get('MSSQL_SERVER', 'DESKTOP-47SJR24'),
+
+        'PORT': '',
+
+        'OPTIONS': {
+            # SAME / compatible driver
+            'driver': os.environ.get(
+                'MSSQL_DRIVER',
+                'ODBC Driver 17 for SQL Server'
+            ),
+
+            # Windows Auth support
+            'extra_params': 'Trusted_Connection=yes;TrustServerCertificate=yes;',
+        },
+    }
 }
+
 
 
 # Password validation
@@ -146,6 +177,13 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+
+STATICFILES_DIRS = [
+    # Project-level static folder (repo root static/)
+    BASE_DIR.parent / "static",
+]
+
 
 # Media files (User uploaded files)
 MEDIA_URL = '/media/'
@@ -160,3 +198,17 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = 'newapp:signin'
 LOGIN_REDIRECT_URL = 'newapp:dashboard'
 LOGOUT_REDIRECT_URL = 'newapp:index'
+
+
+# ==============================
+# AUTO LOGOUT AFTER INACTIVITY
+# ==============================
+
+# Logout user after 10 minutes (600 seconds) of inactivity
+SESSION_COOKIE_AGE = 600  # 10 minutes
+
+# Reset session timer on every request
+SESSION_SAVE_EVERY_REQUEST = True
+
+# Expire session when browser is closed (optional but professional)
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True

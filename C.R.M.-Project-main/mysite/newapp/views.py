@@ -2225,6 +2225,20 @@ class ServiceCallListView(LoginRequiredMixin, ListView):
         context['status_choices'] = ServiceCall.STATUS_CHOICES
         context['priority_choices'] = ServiceCall.PRIORITY_CHOICES
         return context
+    
+    def servicecall_create(request):
+        if request.method == 'POST':
+            form = ServiceCallForm(request.POST)
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.created_by = request.user
+            obj.save()
+            return redirect('newapp:servicecall_list')
+        else:
+            form = ServiceCallForm()
+
+        return render(request, 'newapp/servicecall_form.html', {'form': form})
+
 
 
 class ServiceCallCreateView(LoginRequiredMixin, CreateView):
